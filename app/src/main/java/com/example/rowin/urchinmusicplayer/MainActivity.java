@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
                 } else {
 
                     // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    // functionality that dependson this permission.
                     Toast.makeText(MainActivity.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();
                 }
                 return;
