@@ -1,11 +1,18 @@
-package com.example.rowin.urchinmusicplayer;
+package com.example.rowin.urchinmusicplayer.activity;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
+
+import com.example.rowin.urchinmusicplayer.R;
+import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.util.SongManager;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,21 +30,18 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case 1: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission granted and now can proceed
-                     //a sample method called
-                    AudioManager manager = new AudioManager(this);
-                    manager.Loadmusic();
+                    SongManager manager = new SongManager(this);
+                    ArrayList<Song> listOfSongs =  manager.getSongList();
+                    Log.v("listofsongs", String.valueOf(listOfSongs.get(0).getSongName()));
                 } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that dependson this permission.
+                    //TODO Add function to close application if permission is denied
+                    // permission denied
                     Toast.makeText(MainActivity.this, "Permission denied to read your External storage", Toast.LENGTH_SHORT).show();
                 }
                 return;
             }
-            // add other cases for more permissions
         }
     }
 }
