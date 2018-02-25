@@ -16,6 +16,7 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.example.rowin.urchinmusicplayer.R;
+import com.example.rowin.urchinmusicplayer.adapter.SectionsPagerAdapter;
 import com.example.rowin.urchinmusicplayer.fragment.AlbumFragment;
 import com.example.rowin.urchinmusicplayer.fragment.PlaylistFragment;
 import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
@@ -27,7 +28,6 @@ import java.util.ArrayList;
 
 
 public class MainActivity extends AppCompatActivity {
-
 
     /**
      * The {@link android.support.v4.view.PagerAdapter} that will provide
@@ -49,62 +49,17 @@ public class MainActivity extends AppCompatActivity {
 
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
-        // Set up the ViewPager with the sections adapter.
-
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+    }
+
+    private void setAdapterForViewPager(){
         ViewPager mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
-
-    }
-
-    /**
-     * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
-     * one of the sections/tabs/pages.
-     */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
-
-        public SectionsPagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-        //Calls the fragments to fill the tablayout
-        @Override
-        public Fragment getItem(int position) {
-            switch (position) {
-                case 0:
-                    return new PlaylistFragment();
-                case 1:
-                    return new SongListFragment();
-                case 2:
-                    return new AlbumFragment();
-                default:
-                    return null;
-            }
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            switch (position){
-                case 0:
-                    return "Playlist";
-                case 1:
-                    return "Songs";
-                case 2:
-                    return "Albums";
-                default:
-                    return null;
-            }
-        }
-
-        @Override
-        public int getCount() {
-            // Show 3 total pages.
-            return 3;
-        }
     }
 
     @Override
@@ -116,7 +71,13 @@ public class MainActivity extends AppCompatActivity {
                     // permission granted and now can proceed
                     SongManager manager = new SongManager(this);
                     ArrayList<Song> listOfSongs =  manager.getSongList();
-                    Log.v("listofsongs", String.valueOf(listOfSongs.get(0).getSongName()));
+
+                    Bundle bundle = new Bundle();
+                    bundle.putParcelableArrayList("listOfSongs", listOfSongs);
+                    PlaylistFragment playlistFragment = new PlaylistFragment();
+                    playlistFragment.setArguments(bundle);
+
+                    setAdapterForViewPager();
                 } else {
                     //TODO Add function to close application if permission is denied
                     // permission denied
