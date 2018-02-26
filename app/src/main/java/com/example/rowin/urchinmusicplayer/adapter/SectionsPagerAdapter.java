@@ -35,7 +35,7 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
                 Bundle bundle = new Bundle();
                 bundle.putParcelableArrayList("listOfSongs", listOfSongs);
                 playlistFragment.setArguments(bundle);
-                
+
                 return playlistFragment;
             case 1:
                 return new SongListFragment();

@@ -29,15 +29,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    /**
-     * The {@link android.support.v4.view.PagerAdapter} that will provide
-     * fragments for each of the sections. We use a
-     * {@link FragmentPagerAdapter} derivative, which will keep every
-     * loaded fragment in memory. If this becomes too memory intensive, it
-     * may be best to switch to a
-     * {@link android.support.v4.app.FragmentStatePagerAdapter}.
-     */
-    private SectionsPagerAdapter mSectionsPagerAdapter;
+    ArrayList<Song> listOfSongs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,14 +39,13 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},1);
 
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
     }
 
     private void setAdapterForViewPager(){
+
+        SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), listOfSongs);
         ViewPager mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
@@ -70,12 +61,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission granted and now can proceed
                     SongManager manager = new SongManager(this);
-                    ArrayList<Song> listOfSongs =  manager.getSongList();
-
-                    Bundle bundle = new Bundle();
-                    bundle.putParcelableArrayList("listOfSongs", listOfSongs);
-                    PlaylistFragment playlistFragment = new PlaylistFragment();
-                    playlistFragment.setArguments(bundle);
+                    listOfSongs =  manager.getSongList();
 
                     setAdapterForViewPager();
                 } else {

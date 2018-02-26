@@ -18,16 +18,22 @@ import java.util.ArrayList;
  */
 
 public class PlaylistFragment extends Fragment{
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.playlist_tab_fragment, container, false);
+
+    public PlaylistFragment(){
+
     }
 
     @Override
-    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        Bundle bundle = new Bundle();
-        ArrayList<Song> listOfSongs = bundle.getParcelableArrayList("listOfSongs");
-        //ImageView imageView = view.findViewById(R.id.imageView);
-        //imageView.setImageBitmap(listOfSongs.get(0).getSongCover());
+    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.playlist_tab_fragment, container, false);
+
+        Bundle bundle = this.getArguments();
+        if(bundle!=null){
+            ArrayList<Song> listOfSongs = bundle.getParcelableArrayList("listOfSongs");
+            ImageView imageView = view.findViewById(R.id.imageView);
+            imageView.setImageBitmap(listOfSongs.get(0).getSongCover());
+        }
+
+        return view;
     }
 }

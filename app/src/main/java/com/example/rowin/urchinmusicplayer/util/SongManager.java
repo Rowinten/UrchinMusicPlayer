@@ -7,6 +7,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Log;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 
 import com.example.rowin.urchinmusicplayer.model.Song;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -45,42 +47,44 @@ public class SongManager {
             String artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST));
             String songAlbum = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
             Long songDuration = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION));
-            Uri songUri = Uri.parse(musicDirectory + "/" + cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)));
+            Long albumId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
+            Bitmap image = null;
 
-            //TODO Fix path to each music file so album cover can be extracted
-            //Bitmap songCover = getImageCoverFromMusicFile(songUri);
+            Cursor cursorAlbum = context.getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
+                    new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART}, MediaStore.Audio.Albums._ID + "=" + albumId, null, null);
 
-            Song song = new Song();
-            song.setAlbum(songAlbum);
-            song.setArtist(artist);
-            song.setDuration(convertToDuration(songDuration));
-            song.setSongName(displayName);
+            if(cursorAlbum != null && cursorAlbum.moveToFirst()){
+                String albumCoverPath = cursorAlbum.getString(cursorAlbum.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
+                image = getImageCoverFromMusicFile(albumCoverPath);
+            }
 
-            Log.v("SongName", displayName);
-            //song.setSongCover(songCover);
-
-            listOfSongs.add(song);
+            listOfSongs.add(createSongObject(songAlbum, artist, songDuration, displayName, image));
+            assert cursorAlbum != null;
+            cursorAlbum.close();
         }
+
+        Log.v("list", String.valueOf(listOfSongs));
 
         assert cursor != null;
         cursor.close();
         return listOfSongs;
     }
 
-    private Bitmap getImageCoverFromMusicFile(Uri uri){
-        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-        byte[] rawArt;
-        Bitmap art = null;
-        BitmapFactory.Options bfo = new BitmapFactory.Options();
+    private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, Bitmap image){
+        Song song = new Song();
+        song.setAlbum(songAlbum);
+        song.setArtist(artist);
+        song.setDuration(convertToDuration(songDuration));
+        song.setSongName(displayName);
+        song.setSongCover(image);
+        return song;
+    }
 
-        mediaMetadataRetriever.setDataSource(context.getApplicationContext(), uri);
-        rawArt = mediaMetadataRetriever.getEmbeddedPicture();
+    private Bitmap getImageCoverFromMusicFile(String filePath){
+        File image = new File(filePath);
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
 
-        if(rawArt != null){
-            art = BitmapFactory.decodeByteArray(rawArt, 0, rawArt.length, bfo);
-        }
-
-        return art;
+        return BitmapFactory.decodeFile(image.getAbsolutePath(),bmOptions);
     }
 
     //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
