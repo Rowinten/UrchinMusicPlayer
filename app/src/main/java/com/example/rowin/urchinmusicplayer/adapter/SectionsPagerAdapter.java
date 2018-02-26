@@ -1,5 +1,6 @@
 package com.example.rowin.urchinmusicplayer.adapter;
 
+import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -7,6 +8,9 @@ import android.support.v4.app.FragmentPagerAdapter;
 import com.example.rowin.urchinmusicplayer.fragment.AlbumFragment;
 import com.example.rowin.urchinmusicplayer.fragment.PlaylistFragment;
 import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
+import com.example.rowin.urchinmusicplayer.model.Song;
+
+import java.util.ArrayList;
 
 /**
  * Created by Rowin on 2/24/2018.
@@ -14,15 +18,25 @@ import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
 
 public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-    public SectionsPagerAdapter(FragmentManager fm) {
+    private ArrayList<Song> listOfSongs;
+
+    public SectionsPagerAdapter(FragmentManager fm, ArrayList<Song> listOfSongs) {
         super(fm);
+        this.listOfSongs = listOfSongs;
     }
+
     //Calls the fragments to fill the tablayout
     @Override
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-                return new PlaylistFragment();
+
+                PlaylistFragment playlistFragment = new PlaylistFragment();
+                Bundle bundle = new Bundle();
+                bundle.putParcelableArrayList("listOfSongs", listOfSongs);
+                playlistFragment.setArguments(bundle);
+                
+                return playlistFragment;
             case 1:
                 return new SongListFragment();
             case 2:
