@@ -27,12 +27,6 @@ public class PlaylistFragment extends Fragment{
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.playlist_tab_fragment, container, false);
 
-        Bundle bundle = this.getArguments();
-        if(bundle!=null){
-            ArrayList<Song> listOfSongs = bundle.getParcelableArrayList("listOfSongs");
-            ImageView imageView = view.findViewById(R.id.imageView);
-            imageView.setImageBitmap(listOfSongs.get(0).getSongCover());
-        }
 
         return view;
     }

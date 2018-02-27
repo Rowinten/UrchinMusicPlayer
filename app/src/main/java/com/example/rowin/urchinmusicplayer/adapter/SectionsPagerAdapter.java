@@ -30,17 +30,15 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-
-                PlaylistFragment playlistFragment = new PlaylistFragment();
+                SongListFragment songListFragment = new SongListFragment();
                 Bundle bundle = new Bundle();
                 bundle.putParcelableArrayList("listOfSongs", listOfSongs);
-                playlistFragment.setArguments(bundle);
-
-                return playlistFragment;
+                songListFragment.setArguments(bundle);
+                return songListFragment;
             case 1:
-                return new SongListFragment();
-            case 2:
                 return new AlbumFragment();
+            case 2:
+                return new PlaylistFragment();
             default:
                 return null;
         }
@@ -50,11 +48,11 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     public CharSequence getPageTitle(int position) {
         switch (position){
             case 0:
-                return "Playlist";
-            case 1:
                 return "Songs";
-            case 2:
+            case 1:
                 return "Albums";
+            case 2:
+                return "Playlists";
             default:
                 return null;
         }
