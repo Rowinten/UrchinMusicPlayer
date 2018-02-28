@@ -14,7 +14,7 @@ public class Song implements Parcelable{
     private String duration;
     private String album;
     private String artist;
-    private Bitmap songCover;
+    private String albumCoverPath;
 
     public Song(){
 
@@ -64,21 +64,20 @@ public class Song implements Parcelable{
         this.artist = artist;
     }
 
-    public Bitmap getSongCover() {
-        return songCover;
+    public String getAlbumCoverPath() {
+        return albumCoverPath;
     }
 
-    public void setSongCover(Bitmap songCover) {
-        this.songCover = songCover;
+    public void setAlbumCoverPath(String albumCoverPath) {
+        this.albumCoverPath = albumCoverPath;
     }
-
 
     private Song(Parcel in) {
         songName = in.readString();
         duration = in.readString();
         album = in.readString();
         artist = in.readString();
-        songCover = in.readParcelable(Bitmap.class.getClassLoader());
+        albumCoverPath = in.readString();
     }
 
     @Override
@@ -92,6 +91,7 @@ public class Song implements Parcelable{
         parcel.writeString(duration);
         parcel.writeString(album);
         parcel.writeString(artist);
-        parcel.writeParcelable(songCover, i);
+        parcel.writeString(albumCoverPath);
     }
+
 }

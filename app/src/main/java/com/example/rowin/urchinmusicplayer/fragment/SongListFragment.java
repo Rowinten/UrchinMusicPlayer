@@ -8,6 +8,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 public class SongListFragment extends Fragment{
 
     private RecyclerView songListRecyclerView;
+    private RecyclerViewAdapter.ViewHolder currentlyTabbedItemView, previouslyTabbedItemView;
 
     public SongListFragment(){
     }
@@ -35,7 +38,22 @@ public class SongListFragment extends Fragment{
         Bundle bundle = this.getArguments();
         ArrayList<Song> listOfSongs = bundle.getParcelableArrayList("listOfSongs");
 
-        RecyclerViewAdapter recyclerViewAdapter = new RecyclerViewAdapter(listOfSongs);
+        RecyclerViewAdapter recyclerViewAdapter = new RecyclerViewAdapter(listOfSongs, new RecyclerViewAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(RecyclerViewAdapter.ViewHolder holder) {
+                //Get current ViewHolder object from the itemView that is being pressed
+                //Change Color of that itemView to give user visual feedback of it being pressed
+                currentlyTabbedItemView = holder;
+                currentlyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitlePressedColor));
+
+                //If a previousItemView has already been tabbed, change color back to standard color. To let user know this item is no longer in focus
+                if(previouslyTabbedItemView != null){
+                    previouslyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitleColor));
+                }
+
+                previouslyTabbedItemView = currentlyTabbedItemView;
+            }
+        });
         songListRecyclerView.setAdapter(recyclerViewAdapter);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
         songListRecyclerView.setLayoutManager(layoutManager);

@@ -48,17 +48,16 @@ public class SongManager {
             String songAlbum = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
             Long songDuration = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION));
             Long albumId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
-            Bitmap image = null;
+            String albumCoverPath = null;
 
             Cursor cursorAlbum = context.getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART}, MediaStore.Audio.Albums._ID + "=" + albumId, null, null);
 
             if(cursorAlbum != null && cursorAlbum.moveToFirst()){
-                String albumCoverPath = cursorAlbum.getString(cursorAlbum.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
-                image = getImageCoverFromMusicFile(albumCoverPath);
+                albumCoverPath = cursorAlbum.getString(cursorAlbum.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
             }
 
-            listOfSongs.add(createSongObject(songAlbum, artist, songDuration, displayName, image));
+            listOfSongs.add(createSongObject(songAlbum, artist, songDuration, displayName, albumCoverPath));
             assert cursorAlbum != null;
             cursorAlbum.close();
         }
@@ -70,22 +69,16 @@ public class SongManager {
         return listOfSongs;
     }
 
-    private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, Bitmap image){
+    private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, String albumCoverPath){
         Song song = new Song();
         song.setAlbum(songAlbum);
         song.setArtist(artist);
         song.setDuration(convertToDuration(songDuration));
         song.setSongName(displayName);
-        song.setSongCover(image);
+        song.setAlbumCoverPath(albumCoverPath);
         return song;
     }
 
-    private Bitmap getImageCoverFromMusicFile(String filePath){
-        File image = new File(filePath);
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-
-        return BitmapFactory.decodeFile(image.getAbsolutePath(),bmOptions);
-    }
 
     //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
     private String convertToDuration(Long songDuration){
