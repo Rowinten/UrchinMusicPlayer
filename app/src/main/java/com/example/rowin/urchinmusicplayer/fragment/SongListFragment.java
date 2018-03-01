@@ -46,10 +46,15 @@ public class SongListFragment extends Fragment{
                 currentlyTabbedItemView = holder;
                 currentlyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitlePressedColor));
 
-                //If a previousItemView has already been tabbed, change color back to standard color. To let user know this item is no longer in focus
-                if(previouslyTabbedItemView != null){
-                    previouslyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitleColor));
+                if (currentlyTabbedItemView != previouslyTabbedItemView) {
+                    //If a previousItemView has already been tabbed, change color back to standard color. To let user know this item is no longer in focus
+                    if(previouslyTabbedItemView != null){
+                        previouslyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitleColor));
+                    }
+                } else {
+                    //Do Nothing
                 }
+
 
                 previouslyTabbedItemView = currentlyTabbedItemView;
             }

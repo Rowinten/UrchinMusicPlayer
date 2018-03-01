@@ -27,6 +27,8 @@
 
         </android.support.v7.widget.Toolbar>
 
+        <include layout="@layout/currently_playing_song_tab"/>
+
         <android.support.design.widget.TabLayout
             android:id="@+id/tabs"
             android:layout_width="match_parent"
