@@ -1,36 +1,25 @@
 package com.example.rowin.urchinmusicplayer.activity;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Animatable;
-import android.graphics.drawable.AnimatedVectorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.SectionsPagerAdapter;
-import com.example.rowin.urchinmusicplayer.fragment.AlbumFragment;
-import com.example.rowin.urchinmusicplayer.fragment.PlaylistFragment;
-import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
+import com.example.rowin.urchinmusicplayer.model.Globals;
 import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.util.Animations;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
 
 import java.util.ArrayList;
@@ -40,8 +29,9 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<Song> listOfSongs;
-    private ImageView playButton;
-    private Boolean musicIsPlaying = false;
+    public ImageView playButton, nextSongButton, albumPictureView;
+    public TextView songTitleView, songBandView;
+    private Animations animations;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,11 +46,26 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         playButtonOnClick();
+        nextSongButtonOnClick();
     }
 
-    //TODO change view name imageButton to something more appropriate
+
     private void initializeViews(){
-        playButton = findViewById(R.id.imageButton);
+        animations = new Animations(this);
+        albumPictureView = findViewById(R.id.album_picture_view);
+        playButton = findViewById(R.id.play_pause_button);
+        nextSongButton = findViewById(R.id.next_song_button);
+        songTitleView = findViewById(R.id.song_title_view_currently_playing_tab);
+        songBandView = findViewById(R.id.song_band_name_view_currently_playing_tab);
+    }
+
+    private void nextSongButtonOnClick(){
+        nextSongButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                animations.nextSongAnimation(nextSongButton);
+            }
+        });
     }
 
     private void playButtonOnClick(){
@@ -68,30 +73,21 @@ public class MainActivity extends AppCompatActivity {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onClick(View view) {
-                if(!musicIsPlaying){
-                    playButton.setImageResource(R.drawable.play_to_pause_animator);
-                    Drawable playToPauseAnimation = playButton.getDrawable();
-                    startAnimation(playToPauseAnimation);
-                    musicIsPlaying = true;
+                //If no music is playing and button is clicked, change play animation for play to pause button
+                // else play the opposite animation
+                if(!Globals.isMusicPlaying){
+                    animations.playToPauseAnimation(playButton);
+                    Globals.isMusicPlaying = true;
                 } else {
-                    playButton.setImageResource(R.drawable.pause_to_play_animator);
-                    Drawable pauseToPlayAnimation = playButton.getDrawable();
-                    startAnimation(pauseToPlayAnimation);
-                    musicIsPlaying = false;
+                    animations.pauseToPlayAnimation(playButton);
+                    Globals.isMusicPlaying = false;
                 }
 
             }
         });
     }
 
-    private void startAnimation(Drawable drawable){
-        if(drawable instanceof Animatable){
-            ((Animatable) drawable).start();
-        }
-    }
-
     private void setAdapterForViewPager(){
-
         SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), listOfSongs);
         ViewPager mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);

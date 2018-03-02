@@ -10,6 +10,7 @@ import android.os.Parcelable;
 
 public class Song implements Parcelable{
 
+    private String songPath;
     private String songName;
     private String duration;
     private String album;
@@ -31,6 +32,14 @@ public class Song implements Parcelable{
             return new Song[size];
         }
     };
+
+    public String getSongPath() {
+        return songPath;
+    }
+
+    public void setSongPath(String songPath) {
+        this.songPath = songPath;
+    }
 
     public String getSongName() {
         return songName;
@@ -73,6 +82,7 @@ public class Song implements Parcelable{
     }
 
     private Song(Parcel in) {
+        songPath = in.readString();
         songName = in.readString();
         duration = in.readString();
         album = in.readString();
@@ -87,6 +97,7 @@ public class Song implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(songPath);
         parcel.writeString(songName);
         parcel.writeString(duration);
         parcel.writeString(album);

@@ -1,22 +1,14 @@
 package com.example.rowin.urchinmusicplayer.adapter;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.support.constraint.ConstraintLayout;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
-import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.TextView;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.model.Song;
 
-import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -29,7 +21,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     private final OnItemClickListener listener;
 
     public interface OnItemClickListener{
-        void onItemClick(ViewHolder holder);
+        void onItemClick(ViewHolder holder, Song song);
     }
 
     public RecyclerViewAdapter(ArrayList<Song> listOfSongs, OnItemClickListener listener){
@@ -48,12 +40,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         ViewHolder(View itemView) {
             super(itemView);
 
-            songTitleView = itemView.findViewById(R.id.song_title_view);
+            songTitleView = itemView.findViewById(R.id.song_title_view_currently_playing_tab);
             songBandNameView = itemView.findViewById(R.id.song_band_name_view);
             songDurationView = itemView.findViewById(R.id.song_duration_view);
         }
 
-        void bind(Song song, final ViewHolder holder, final OnItemClickListener listener){
+        void bind(final Song song, final ViewHolder holder, final OnItemClickListener listener){
             songTitleView.setText(song.getSongName());
             songBandNameView.setText(song.getArtist());
             songDurationView.setText(song.getDuration());
@@ -61,7 +53,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    listener.onItemClick(holder);
+                    listener.onItemClick(holder, song);
                 }
             });
         }
@@ -84,10 +76,4 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return listOfSongs.size();
     }
 
-    private Bitmap getImageCoverFromMusicFile(String filePath){
-        File image = new File(filePath);
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-
-        return BitmapFactory.decodeFile(image.getAbsolutePath(),bmOptions);
-    }
 }

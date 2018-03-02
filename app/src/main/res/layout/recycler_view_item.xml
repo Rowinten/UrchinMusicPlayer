@@ -9,7 +9,7 @@
     android:id="@+id/item_background">
 
     <TextView
-        android:id="@+id/song_title_view"
+        android:id="@+id/song_title_view_currently_playing_tab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
