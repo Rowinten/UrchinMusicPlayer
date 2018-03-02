@@ -48,6 +48,7 @@ public class SongManager {
             String songAlbum = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
             Long songDuration = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION));
             Long albumId = cursor.getLong(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
+            String songPath = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA));
             String albumCoverPath = null;
 
             Cursor cursorAlbum = context.getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
@@ -57,25 +58,23 @@ public class SongManager {
                 albumCoverPath = cursorAlbum.getString(cursorAlbum.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
             }
 
-            listOfSongs.add(createSongObject(songAlbum, artist, songDuration, displayName, albumCoverPath));
+            listOfSongs.add(createSongObject(songAlbum, artist, songDuration, displayName, albumCoverPath, songPath));
             assert cursorAlbum != null;
             cursorAlbum.close();
         }
-
-        Log.v("list", String.valueOf(listOfSongs));
-
         assert cursor != null;
         cursor.close();
         return listOfSongs;
     }
 
-    private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, String albumCoverPath){
+    private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, String albumCoverPath, String songPath){
         Song song = new Song();
         song.setAlbum(songAlbum);
         song.setArtist(artist);
         song.setDuration(convertToDuration(songDuration));
         song.setSongName(displayName);
         song.setAlbumCoverPath(albumCoverPath);
+        song.setSongPath(songPath);
         return song;
     }
 
