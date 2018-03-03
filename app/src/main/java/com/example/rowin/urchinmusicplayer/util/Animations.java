@@ -18,6 +18,8 @@ import com.example.rowin.urchinmusicplayer.R;
 public class Animations {
     private AnimatorSet setFrontOut, setBackIn;
     private Context context;
+    private boolean isBackVisible = false;
+    private View albumImageHolderFront, albumImageHolderBack;
 
     public Animations(Context context){
         this.context = context;
@@ -29,14 +31,17 @@ public class Animations {
         setBackIn = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.back_flip_imageview);
     }
 
-    //TODO fix this animation, as it does not completely flip over.
-    public void changeAlbumPictureAnimation(ImageView albumPictureView, Bitmap newAlbumImage){
-        setFrontOut.setTarget(albumPictureView);
+    public void frontToBackAnimation(View albumImageHolderFront, View albumImageHolderBack){
+        setFrontOut.setTarget(albumImageHolderFront);
+        setBackIn.setTarget(albumImageHolderBack);
         setFrontOut.start();
+        setBackIn.start();
+    }
 
-        albumPictureView.setImageBitmap(newAlbumImage);
-
-        setBackIn.setTarget(albumPictureView);
+    public void backToFrontAnimation(View albumImageHolderBack, View albumImageHolderFront){
+        setFrontOut.setTarget(albumImageHolderBack);
+        setBackIn.setTarget(albumImageHolderFront);
+        setFrontOut.start();
         setBackIn.start();
     }
 

@@ -2,7 +2,6 @@ package com.example.rowin.urchinmusicplayer.fragment;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -36,8 +35,11 @@ public class SongListFragment extends Fragment{
     private RecyclerViewAdapter.ViewHolder previouslyTabbedItemView;
     private Animations animations;
 
-    private ImageView playButton, nextSongButton, albumPictureView;
+    private ImageView playButton, frontAlbumImage, backAlbumImage;
     private TextView songTitleView, songBandView;
+    private Boolean isAlbumBackVisible = false;
+
+    private View albumBack, albumFront;
 
 
 
@@ -65,10 +67,12 @@ public class SongListFragment extends Fragment{
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
         playButton = ((MainActivity) getActivity()).playButton;
-        nextSongButton = ((MainActivity)getActivity()).nextSongButton;
-        albumPictureView = ((MainActivity) getActivity()).albumPictureView;
+        frontAlbumImage = ((MainActivity)getActivity()).frontAlbumCoverView;
+        backAlbumImage = ((MainActivity)getActivity()).backAlbumCoverView;
         songTitleView = ((MainActivity)getActivity()).songTitleView;
         songBandView = ((MainActivity)getActivity()).songBandView;
+        albumBack = ((MainActivity) getActivity()).backAlbumCoverLayout;
+        albumFront = ((MainActivity) getActivity()).frontAlbumCoverLayout;
     }
 
 
@@ -77,7 +81,7 @@ public class SongListFragment extends Fragment{
             @Override
             public void onItemClick(RecyclerViewAdapter.ViewHolder holder, Song song) {
                 changeItemViewTitleColor(holder);
-                animations.changeAlbumPictureAnimation(albumPictureView, getImageCoverFromMusicFile(song.getAlbumCoverPath()));
+                changeAlbumCoverPicture(getImageCoverFromMusicFile(song.getAlbumCoverPath()));
                 setSongVariablesInTextViews(song);
 
                 //If no Music is playing, change play icon to pause icon when song is clicked
@@ -91,6 +95,21 @@ public class SongListFragment extends Fragment{
 
             }
         });
+    }
+
+    //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
+    //when clicked an animation plays that flips over to the opposite ImageView and displays the album cover of the newly clicked song
+    //isAlbumBackVisible keeps record of which side is on the visible side.
+    private void changeAlbumCoverPicture(Bitmap newAlbumCover){
+        if(!isAlbumBackVisible){
+            backAlbumImage.setImageBitmap(newAlbumCover);
+            animations.backToFrontAnimation(albumBack, albumFront);
+            isAlbumBackVisible = true;
+        } else {
+            frontAlbumImage.setImageBitmap(newAlbumCover);
+            animations.frontToBackAnimation(albumFront, albumBack);
+            isAlbumBackVisible = false;
+        }
     }
 
     private Bitmap getImageCoverFromMusicFile(String filePath){
@@ -128,7 +147,8 @@ public class SongListFragment extends Fragment{
         //Checks if there was a song playing before the currently clicked song and stops it.
         if(globals.getCurrentlyPlayingSong() != null){
             MediaPlayer previousPlayingSong = globals.getCurrentlyPlayingSong();
-            previousPlayingSong.stop();
+            previousPlayingSong.reset();
+            previousPlayingSong.release();
         }
 
         //TODO Solve error after tapping songs quickly (-19, 0) error
@@ -138,18 +158,13 @@ public class SongListFragment extends Fragment{
             mediaPlayer.setDataSource(songPath);
             mediaPlayer.prepare();
             mediaPlayer.start();
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mediaPlayer) {
-                    mediaPlayer.release();
-                }
-            });
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         //sets the new clicked song as the currently playing song
         globals.setCurrentlyPlayingSong(mediaPlayer);
+        ((MainActivity)getActivity()).syncProgressBarWithAudioDuration(mediaPlayer);
 
     }
 }
