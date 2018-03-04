@@ -11,7 +11,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -38,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private Animations animations;
     private Globals globalVars;
     private ProgressBar audioProgressBar;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
 
     private Handler progressBarHandler = new Handler();
 
@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //TODO App crashes when new song is clicked after the first song
-
     public void syncProgressBarWithAudioDuration(final MediaPlayer currentlyPlayingSong){
         audioProgressBar.setProgress(0);
         audioProgressBar.setMax(currentlyPlayingSong.getDuration());
@@ -114,9 +113,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
-
-
     private void playButtonOnClick(){
         playButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -141,12 +137,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setAdapterForViewPager(){
-        SectionsPagerAdapter mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), listOfSongs);
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), listOfSongs, this);
         ViewPager mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
+        mSectionsPagerAdapter.createTabIcons(tabLayout);
+        tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                mSectionsPagerAdapter.changeTabToSelected(tab, tab.getPosition());
+            }
+
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+                mSectionsPagerAdapter.changeTabToUnselected(tab, tab.getPosition());
+            }
+
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+
+            }
+        });
     }
 
     @Override

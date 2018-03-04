@@ -9,4 +9,6 @@
     <color name="recyclerTitleColor">#FFFFFF</color>
     <color name="recyclerTitlePressedColor">#D50000</color>
     <color name="recyclerSubTitleColor">@android:color/darker_gray</color>
+    <color name="tabSelectedTextColor">#ffffff</color>
+    <color name="tabUnselectedTextColor">#b3b3b3</color>
 </resources>

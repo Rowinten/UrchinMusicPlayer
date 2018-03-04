@@ -29,6 +29,7 @@ import java.util.ArrayList;
  * Created by Rowin on 2/24/2018.
  */
 
+//TODO RecyclerView overlaps with the currently_playing_tab_view
 public class SongListFragment extends Fragment{
 
     private RecyclerView songListRecyclerView;

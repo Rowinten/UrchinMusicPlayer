@@ -27,7 +27,6 @@
         android:layout_width="45dp"
         android:layout_height="45dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         app:layout_constraintBottom_toTopOf="@+id/audio_progress_bar"
