@@ -3,7 +3,6 @@ package com.example.rowin.urchinmusicplayer.util;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
@@ -18,8 +17,6 @@ import com.example.rowin.urchinmusicplayer.R;
 public class Animations {
     private AnimatorSet setFrontOut, setBackIn;
     private Context context;
-    private boolean isBackVisible = false;
-    private View albumImageHolderFront, albumImageHolderBack;
 
     public Animations(Context context){
         this.context = context;
@@ -62,7 +59,7 @@ public class Animations {
         startVectorDrawableAnimation(pauseToPlayAnimation);
     }
 
-    private void startVectorDrawableAnimation(Drawable drawable){
+    public void startVectorDrawableAnimation(Drawable drawable){
         if(drawable instanceof Animatable){
             ((Animatable) drawable).start();
         }

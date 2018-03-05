@@ -4,7 +4,6 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.os.Build;
-import android.os.Handler;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
@@ -31,15 +30,16 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity {
 
     private ArrayList<Song> listOfSongs;
+    private SectionsPagerAdapter mSectionsPagerAdapter;
+    private Animations animations;
+    private Globals globalVars;
+
+    public ProgressBar audioProgressBar;
     public ImageView playButton, nextSongButton, backAlbumCoverView, frontAlbumCoverView;
     public View frontAlbumCoverLayout, backAlbumCoverLayout;
     public TextView songTitleView, songBandView;
-    private Animations animations;
-    private Globals globalVars;
-    private ProgressBar audioProgressBar;
-    private SectionsPagerAdapter mSectionsPagerAdapter;
 
-    private Handler progressBarHandler = new Handler();
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,37 +82,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    //TODO App crashes when new song is clicked after the first song
-    public void syncProgressBarWithAudioDuration(final MediaPlayer currentlyPlayingSong){
-        audioProgressBar.setProgress(0);
-        audioProgressBar.setMax(currentlyPlayingSong.getDuration());
-
-        //Start a new thread so that we can update the progressBar at 1000 ms intervals by calling Thread.sleep(1000)
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //While the time the song is currently at is smaller than the total time of the song, keep updating the progressBar
-                while(currentlyPlayingSong.getCurrentPosition() < currentlyPlayingSong.getDuration() && Globals.isMusicPlaying){
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                    progressBarHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            audioProgressBar.setProgress(currentlyPlayingSong.getCurrentPosition());
-                        }
-                    });
-                }
-            }
-        }).start();
-
-    }
-
-
     private void playButtonOnClick(){
         playButton.setOnClickListener(new View.OnClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -144,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
         mSectionsPagerAdapter.createTabIcons(tabLayout);
+
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {

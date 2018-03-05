@@ -1,17 +1,13 @@
 package com.example.rowin.urchinmusicplayer.fragment;
 
-import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.example.rowin.urchinmusicplayer.R;
-import com.example.rowin.urchinmusicplayer.model.Song;
-
-import java.util.ArrayList;
 
 /**
  * Created by Rowin on 2/24/2018.
