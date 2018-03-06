@@ -19,6 +19,7 @@ import android.widget.Toast;
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.SectionsPagerAdapter;
 import com.example.rowin.urchinmusicplayer.model.Globals;
+import com.example.rowin.urchinmusicplayer.model.MusicLists;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
@@ -108,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
     private void setAdapterForViewPager(){
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), listOfSongs, this);
         ViewPager mViewPager = findViewById(R.id.container);
+
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         TabLayout tabLayout = findViewById(R.id.tabs);
@@ -140,7 +142,11 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission granted and now can proceed
                     SongManager manager = new SongManager(this);
-                    listOfSongs =  manager.getSongList();
+                    MusicLists.getInstance().setListOfSongs(manager.getSongsFromMusicDirectory());
+
+                    //listOfSongs =  manager.getSongList();
+
+                    //listOfSongs = MusicLists.getInstance().getListOfSongs();
 
                     setAdapterForViewPager();
                 } else {

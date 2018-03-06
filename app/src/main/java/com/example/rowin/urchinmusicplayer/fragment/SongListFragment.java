@@ -1,6 +1,7 @@
 package com.example.rowin.urchinmusicplayer.fragment;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -16,6 +17,7 @@ import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
 import com.example.rowin.urchinmusicplayer.model.Globals;
+import com.example.rowin.urchinmusicplayer.model.MusicLists;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
@@ -50,8 +52,8 @@ public class SongListFragment extends Fragment{
         initializeViews(view);
 
         songManager = new SongManager(getContext());
-        Bundle bundle = this.getArguments();
-        ArrayList<Song> listOfSongs = bundle.getParcelableArrayList("listOfSongs");
+//        Bundle bundle = this.getArguments();
+        ArrayList<Song> listOfSongs = MusicLists.getInstance().getListOfSongs();
         animations = new Animations(getContext());
 
         songListRecyclerView.setAdapter(getRecyclerViewAdapter(listOfSongs));

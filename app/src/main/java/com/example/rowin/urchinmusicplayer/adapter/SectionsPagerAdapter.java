@@ -1,5 +1,8 @@
 package com.example.rowin.urchinmusicplayer.adapter;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
+import android.animation.AnimatorSet;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
@@ -7,6 +10,9 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import com.example.rowin.urchinmusicplayer.R;
@@ -14,6 +20,7 @@ import com.example.rowin.urchinmusicplayer.fragment.AlbumFragment;
 import com.example.rowin.urchinmusicplayer.fragment.PlaylistFragment;
 import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
 import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.util.Animations;
 
 import java.util.ArrayList;
 
@@ -34,7 +41,7 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
     //Creates the layout for all the tabs
     public void createTabIcons(TabLayout tabLayout){
-        TextView songTab = (TextView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
+        final TextView songTab = (TextView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
         songTab.setText(R.string.tab_text_1);
         songTab.setTextColor(context.getResources().getColor(R.color.tabSelectedTextColor));
         songTab.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_song_tab_icon_focused, 0, 0);
@@ -101,11 +108,11 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-                SongListFragment songListFragment = new SongListFragment();
-                Bundle bundle = new Bundle();
-                bundle.putParcelableArrayList("listOfSongs", listOfSongs);
-                songListFragment.setArguments(bundle);
-                return songListFragment;
+//                SongListFragment songListFragment = new SongListFragment();
+//                Bundle bundle = new Bundle();
+//                bundle.putParcelableArrayList("listOfSongs", listOfSongs);
+//                songListFragment.setArguments(bundle);
+                return new SongListFragment();
             case 1:
                 return new AlbumFragment();
             case 2:
