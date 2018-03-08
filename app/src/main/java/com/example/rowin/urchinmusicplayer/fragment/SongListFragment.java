@@ -1,7 +1,5 @@
 package com.example.rowin.urchinmusicplayer.fragment;
 
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -11,16 +9,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
-import com.example.rowin.urchinmusicplayer.model.Globals;
-import com.example.rowin.urchinmusicplayer.model.MusicLists;
+import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.SongManager;
+import com.example.rowin.urchinmusicplayer.util.PlayAudio;
 
 import java.util.ArrayList;
 
@@ -36,8 +32,7 @@ public class SongListFragment extends Fragment{
     private Animations animations;
 
     private ImageView playButton;
-    private ProgressBar songProgressBar;
-    private SongManager songManager;
+    private PlayAudio audioPlayer;
 
 
 
@@ -51,9 +46,9 @@ public class SongListFragment extends Fragment{
         View view =  inflater.inflate(R.layout.songs_tab_fragment, container, false);
         initializeViews(view);
 
-        songManager = new SongManager(getContext());
-//        Bundle bundle = this.getArguments();
-        ArrayList<Song> listOfSongs = MusicLists.getInstance().getListOfSongs();
+        audioPlayer = new PlayAudio(getContext());
+        MusicStorage musicStorage = new MusicStorage(getContext());
+        ArrayList<Song> listOfSongs = musicStorage.loadAudio();
         animations = new Animations(getContext());
 
         songListRecyclerView.setAdapter(getRecyclerViewAdapter(listOfSongs));
@@ -66,27 +61,24 @@ public class SongListFragment extends Fragment{
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
         playButton = ((MainActivity) getActivity()).playButton;
-        songProgressBar = ((MainActivity) getActivity()).audioProgressBar;
     }
 
 
-    private RecyclerViewAdapter getRecyclerViewAdapter(ArrayList<Song> listOfSongs){
+    private RecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
         return new RecyclerViewAdapter(listOfSongs, new RecyclerViewAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(RecyclerViewAdapter.ViewHolder holder, Song song) {
                 changeItemViewTitleColor(holder);
-                Bitmap imageCover = songManager.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
-                songManager.changeAlbumCoverPicture(imageCover);
-                songManager.setSongVariablesInTextViews(song);
 
                 //If no Music is playing, change play icon to pause icon when song is clicked
                 //If song is playing then do nothing for the animation. since the pause button is already visible.
-                if(!Globals.isMusicPlaying) {
-                    animations.playToPauseAnimation(playButton);
-                    Globals.isMusicPlaying = true;
-                }
+//                if(!Globals.isMusicPlaying) {
+//                    animations.playToPauseAnimation(playButton);
+//                    Globals.isMusicPlaying = true;
+//                }
 
-                songManager.playSelectedSongSequence(song.getSongPath(), songProgressBar);
+                int index = listOfSongs.indexOf(song);
+                ((MainActivity) getActivity()).playAudio(index);
             }
         });
     }

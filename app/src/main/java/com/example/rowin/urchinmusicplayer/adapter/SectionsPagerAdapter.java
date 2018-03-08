@@ -30,12 +30,10 @@ import java.util.ArrayList;
 
 public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-    private ArrayList<Song> listOfSongs;
     private Context context;
 
-    public SectionsPagerAdapter(FragmentManager fm, ArrayList<Song> listOfSongs, Context context) {
+    public SectionsPagerAdapter(FragmentManager fm, Context context) {
         super(fm);
-        this.listOfSongs = listOfSongs;
         this.context = context;
     }
 
@@ -108,10 +106,6 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-//                SongListFragment songListFragment = new SongListFragment();
-//                Bundle bundle = new Bundle();
-//                bundle.putParcelableArrayList("listOfSongs", listOfSongs);
-//                songListFragment.setArguments(bundle);
                 return new SongListFragment();
             case 1:
                 return new AlbumFragment();

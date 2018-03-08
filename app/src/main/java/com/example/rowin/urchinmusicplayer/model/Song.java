@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * Created by Rowin on 2/23/2018.
  */
 
-public class Song{
+public class Song implements Parcelable {
 
     private String songPath;
     private String songName;
@@ -23,17 +23,41 @@ public class Song{
 
     }
 
-//    public static final Creator<Song> CREATOR = new Creator<Song>() {
-//        @Override
-//        public Song createFromParcel(Parcel in) {
-//            return new Song(in);
-//        }
-//
-//        @Override
-//        public Song[] newArray(int size) {
-//            return new Song[size];
-//        }
-//    };
+    private Song(Parcel in) {
+        songPath = in.readString();
+        songName = in.readString();
+        duration = in.readString();
+        album = in.readString();
+        artist = in.readString();
+        albumCoverPath = in.readString();
+    }
+
+    public static final Creator<Song> CREATOR = new Creator<Song>() {
+        @Override
+        public Song createFromParcel(Parcel in) {
+            return new Song(in);
+        }
+
+        @Override
+        public Song[] newArray(int size) {
+            return new Song[size];
+        }
+    };
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeString(songPath);
+        parcel.writeString(songName);
+        parcel.writeString(duration);
+        parcel.writeString(album);
+        parcel.writeString(artist);
+        parcel.writeString(albumCoverPath);
+    }
 
     public String getSongPath() {
         return songPath;
@@ -82,29 +106,4 @@ public class Song{
     public void setAlbumCoverPath(String albumCoverPath) {
         this.albumCoverPath = albumCoverPath;
     }
-
-//    private Song(Parcel in) {
-//        songPath = in.readString();
-//        songName = in.readString();
-//        duration = in.readString();
-//        album = in.readString();
-//        artist = in.readString();
-//        albumCoverPath = in.readString();
-//    }
-//
-//    @Override
-//    public int describeContents() {
-//        return 0;
-//    }
-//
-//    @Override
-//    public void writeToParcel(Parcel parcel, int i) {
-//        parcel.writeString(songPath);
-//        parcel.writeString(songName);
-//        parcel.writeString(duration);
-//        parcel.writeString(album);
-//        parcel.writeString(artist);
-//        parcel.writeString(albumCoverPath);
-//    }
-
 }
