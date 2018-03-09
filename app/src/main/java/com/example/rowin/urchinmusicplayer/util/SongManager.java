@@ -66,24 +66,10 @@ public class SongManager {
         Song song = new Song();
         song.setAlbum(songAlbum);
         song.setArtist(artist);
-        song.setDuration(convertToDuration(songDuration));
+        song.setDuration(songDuration);
         song.setSongName(displayName);
         song.setAlbumCoverPath(albumCoverPath);
         song.setSongPath(songPath);
         return song;
-    }
-
-    //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
-    private String convertToDuration(Long songDuration){
-        long seconds = songDuration/1000;
-        long minutes = seconds / 60;
-        seconds = seconds % 60;
-
-        if(seconds < 10){
-            seconds = Long.valueOf("0" + seconds);
-            Log.v("d", String.valueOf(seconds));
-        }
-
-        return minutes +":"+seconds;
     }
 }

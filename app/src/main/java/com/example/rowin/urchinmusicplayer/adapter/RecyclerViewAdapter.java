@@ -1,6 +1,7 @@
 package com.example.rowin.urchinmusicplayer.adapter;
 
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,7 +49,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         void bind(final Song song, final ViewHolder holder, final OnItemClickListener listener){
             songTitleView.setText(song.getSongName());
             songBandNameView.setText(song.getArtist());
-            songDurationView.setText(song.getDuration());
+            songDurationView.setText(convertToDuration(song.getDuration()));
 
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -76,4 +77,17 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return listOfSongs.size();
     }
 
+    //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
+    private String convertToDuration(Long songDuration){
+        long seconds = songDuration/1000;
+        long minutes = seconds / 60;
+        seconds = seconds % 60;
+
+        if(seconds < 10){
+            seconds = Long.valueOf("0" + seconds);
+            Log.v("d", String.valueOf(seconds));
+        }
+
+        return minutes +":"+seconds;
+    }
 }

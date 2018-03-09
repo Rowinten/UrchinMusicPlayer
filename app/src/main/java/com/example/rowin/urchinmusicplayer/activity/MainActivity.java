@@ -32,25 +32,31 @@ import com.example.rowin.urchinmusicplayer.model.MediaPlayerService;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.ProgressObserver;
+
 import com.example.rowin.urchinmusicplayer.util.SongManager;
 
 import java.io.File;
-import java.util.ArrayList;
+
 
 
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String BROADCAST_ACTION = "com.example.rowin.urchinmusicplayer";
+    public static final String BROADCAST_ACTION = "com.example.rowin.urchinmusicplayer.Broadcast";
     public static final String PLAY_NEW_AUDIO = "com.example.rowin.urchinmusicplayer.PlayNewAudio";
+    public static final String AUDIO_PROGRESS = "com.example.rowin.urchinmusicplayer.AudioProgress";
+    public static final String SKIP_SONG = "com.example.rowin.urchinmusicplayer.SkipSong";
+    public static final String CHANGE_MEDIA_STATE = "com.example.rowin.urchinmusicplayer.PlayPause";
+
+    public static final int SKIP_TO_NEXT = 0;
+    public static final int SKIP_TO_PREVIOUS = 1;
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private Animations animations;
     private ServiceConnection serviceConnection;
     private MediaPlayerService playerService;
     private SongBroadCastReceiver songBroadCastReceiver;
-    private ProgressObserver progressObserver;
+    private AudioProgressBroadcastReceiver audioProgressBroadcastReceiver;
 
     public ProgressBar audioProgressBar;
     public ImageView playButton, nextSongButton, backAlbumCoverView, frontAlbumCoverView;
@@ -59,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
     private boolean serviceBound = false;
     private Boolean isAlbumBackVisible = false;
+    private Boolean statePlaying = false;
 
 
     @Override
@@ -66,21 +73,29 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initializeViews();
-        createServiceConnection();
-
-        songBroadCastReceiver = new SongBroadCastReceiver();
 
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},1);
 
+        createServiceConnection();
+        registerSongBroadcastReceiver();
+        registerAudioProgressBroadcastReceiver();
 
-        //playButtonOnClick();
+        playButtonOnClick();
         nextSongButtonOnClick();
+    }
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BROADCAST_ACTION);
-        registerReceiver(songBroadCastReceiver, intentFilter);
+    private void sendSkipSongRequest(int skipType){
+        Intent skipSongIntent = new Intent();
+        skipSongIntent.setAction(SKIP_SONG);
+        skipSongIntent.putExtra("skipType", skipType);
+        sendBroadcast(skipSongIntent);
+    }
 
+    private void sendChangeMediaStateRequest(){
+        Intent changeMediaStateIntent = new Intent();
+        changeMediaStateIntent.setAction(CHANGE_MEDIA_STATE);
+        sendBroadcast(changeMediaStateIntent);
     }
 
     @Override
@@ -93,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         unregisterReceiver(songBroadCastReceiver);
+        unregisterReceiver(audioProgressBroadcastReceiver);
     }
 
     @Override
@@ -163,6 +179,20 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    private void registerSongBroadcastReceiver(){
+        songBroadCastReceiver = new SongBroadCastReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BROADCAST_ACTION);
+        registerReceiver(songBroadCastReceiver, intentFilter);
+    }
+
+    private void registerAudioProgressBroadcastReceiver(){
+        audioProgressBroadcastReceiver = new AudioProgressBroadcastReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(AUDIO_PROGRESS);
+        registerReceiver(audioProgressBroadcastReceiver, intentFilter);
+    }
+
     public void playAudio(int index){
         if(!serviceBound){
             Intent playerIntent = new Intent(this, MediaPlayerService.class);
@@ -217,32 +247,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 animations.nextSongAnimation(nextSongButton);
+                sendSkipSongRequest(SKIP_TO_NEXT);
             }
         });
     }
 
-//    private void playButtonOnClick(){
-//        playButton.setOnClickListener(new View.OnClickListener() {
-//            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-//            @Override
-//            public void onClick(View view) {
-//                MediaPlayer currentlyPlayingSong = globalVars.getCurrentlyPlayingSong();
-//                //If no music is playing and button is clicked, change play animation for play to pause button
-//                // else play the opposite animation
-//                if(!Globals.isMusicPlaying){
-//                    animations.playToPauseAnimation(playButton);
-//                    currentlyPlayingSong.start();
-//
-//                    Globals.isMusicPlaying = true;
-//                } else {
-//                    animations.pauseToPlayAnimation(playButton);
-//                    currentlyPlayingSong.pause();
-//                    Globals.isMusicPlaying = false;
-//                }
-//
-//            }
-//        });
-//    }
+    private void playButtonOnClick(){
+        playButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //If no music is playing and button is clicked, change play animation for play to pause button
+                // else play the opposite animation
+                if(!statePlaying){
+                    animations.playToPauseAnimation(playButton);
+                    statePlaying = true;
+                } else {
+                    animations.pauseToPlayAnimation(playButton);
+                    statePlaying = false;
+                }
+                sendChangeMediaStateRequest();
+            }
+        });
+    }
 
     private void setAdapterForViewPager(){
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this);
@@ -277,8 +303,25 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             Song song = intent.getParcelableExtra("song");
+            Long songDuration = intent.getLongExtra("songDuration", 0);
+
             changeAlbumCoverPicture(getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
+            initProgressBar(songDuration);
             updateTextViews(song);
+        }
+
+        private void initProgressBar(Long songDuration){
+            audioProgressBar.setProgress(0);
+            audioProgressBar.setMax((int) (long) songDuration);
+        }
+    }
+
+    class AudioProgressBroadcastReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int currentPositionInSong = intent.getIntExtra("currentPosition", 0);
+            audioProgressBar.setProgress(currentPositionInSong);
         }
     }
 }

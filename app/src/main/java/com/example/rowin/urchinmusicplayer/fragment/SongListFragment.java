@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,10 +30,6 @@ public class SongListFragment extends Fragment{
 
     private RecyclerView songListRecyclerView;
     private RecyclerViewAdapter.ViewHolder previouslyTabbedItemView;
-    private Animations animations;
-
-    private ImageView playButton;
-    private PlayAudio audioPlayer;
 
 
 
@@ -46,10 +43,8 @@ public class SongListFragment extends Fragment{
         View view =  inflater.inflate(R.layout.songs_tab_fragment, container, false);
         initializeViews(view);
 
-        audioPlayer = new PlayAudio(getContext());
         MusicStorage musicStorage = new MusicStorage(getContext());
         ArrayList<Song> listOfSongs = musicStorage.loadAudio();
-        animations = new Animations(getContext());
 
         songListRecyclerView.setAdapter(getRecyclerViewAdapter(listOfSongs));
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
@@ -60,7 +55,6 @@ public class SongListFragment extends Fragment{
 
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
-        playButton = ((MainActivity) getActivity()).playButton;
     }
 
 

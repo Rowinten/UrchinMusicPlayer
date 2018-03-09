@@ -5,8 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -14,12 +12,10 @@ import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import android.os.Parcelable;
 import android.support.annotation.Nullable;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 
-import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
 
 import java.io.IOException;
@@ -42,8 +38,14 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     private AudioManager audioManager;
     private AudioFocusRequest audioFocusRequest;
+    private BecomingNoisyReceiver becomingNoisyReceiver;
+    private NextSongReceiver nextSongReceiver;
+    private ChangeMediaStateReceiver changeMediaStateReceiver;
+    private SkipSongReceiver skipSongReceiver;
 
     private boolean ongoingCall = false;
+
+    //TODO FIX PROGRESSBAR RECEIVER, STARTING NEW THREAD WHEN PLAYING NEW SONG TO FAST AFTER ANOTHER CRASHES THE APP OR CALLS ONCOMPLETE BECAUSE ERROR POPS
 
 
     @Nullable
@@ -57,26 +59,12 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         super.onCreate();
 
         callStateListener();
+
         registerBecomingNoisyReceiver();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(MainActivity.PLAY_NEW_AUDIO);
-        registerReceiver(nextSongBroadcastReceiver, intentFilter);
+        registerNextSongReceiver();
+        registerChangeMediaStateReceiver();
+        registerSkipSongReceiver();
     }
-
-    private BroadcastReceiver nextSongBroadcastReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            //If broadcast receives index for new song, stop media that is currently playing
-            stopMedia();
-
-            songIndex = intent.getIntExtra("songIndex", 0);
-            Song song = listOfSongs.get(songIndex);
-            mediaFile = song.getSongPath();
-            initMediaPlayer();
-            sendSongToActivity(song);
-        }
-    };
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -96,6 +84,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         if(requestAudioFocus()){
             initMediaPlayer();
             sendSongToActivity(songToBePlayed);
+            //sendSongProgressToActivity();
         } else {
             stopSelf();
         }
@@ -113,19 +102,26 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         }
         removeAudioFocus();
 
-        unregisterReceiver(nextSongBroadcastReceiver);
+        unregisterReceiver(nextSongReceiver);
         unregisterReceiver(becomingNoisyReceiver);
+        unregisterReceiver(changeMediaStateReceiver);
+        unregisterReceiver(skipSongReceiver);
     }
 
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         stopMedia();
 
-        songIndex = songIndex + 1;
-        Song song = listOfSongs.get(songIndex);
-        mediaFile = song.getSongPath();
-        initMediaPlayer();
-        sendSongToActivity(song);
+        int newSongIndex = songIndex + 1;
+
+        if(newSongIndex != -1 && newSongIndex < listOfSongs.size()) {
+            songIndex = newSongIndex;
+            Song song = listOfSongs.get(songIndex);
+            mediaFile = song.getSongPath();
+            initMediaPlayer();
+            sendSongToActivity(song);
+            //sendSongProgressToActivity();
+        }
 
         stopSelf();
     }
@@ -139,6 +135,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         playMedia();
+
+        //sendSongProgressToActivity();
     }
 
     @Override
@@ -154,6 +152,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             case AudioManager.AUDIOFOCUS_GAIN:
                 if(mediaPlayer==null) { initMediaPlayer(); }
                 playMedia();
+                //sendSongToActivity();
+                //sendSongProgressToActivity();
                 break;
             //When app loses audio focus over other apps, stop playing music if music is playing so that music
             //from multiple apps do not overlap
@@ -177,23 +177,43 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         }
     }
 
-    private BroadcastReceiver becomingNoisyReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            pauseMedia();
-        }
-    };
 
     private void sendSongToActivity(Song song){
         Intent broadCastIntent = new Intent();
         broadCastIntent.setAction(MainActivity.BROADCAST_ACTION);
+        broadCastIntent.putExtra("songDuration", song.getDuration());
         broadCastIntent.putExtra("song", song);
         sendBroadcast(broadCastIntent);
     }
 
+//    private void sendSongProgressToActivity(){
+//        ProgressRunnable progressRunnable = new ProgressRunnable();
+//        new Thread(progressRunnable).start();
+//    }
+
     private void registerBecomingNoisyReceiver(){
+        becomingNoisyReceiver = new BecomingNoisyReceiver();
         IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
         registerReceiver(becomingNoisyReceiver, intentFilter);
+    }
+
+    private void registerNextSongReceiver(){
+        nextSongReceiver = new NextSongReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MainActivity.PLAY_NEW_AUDIO);
+        registerReceiver(nextSongReceiver, intentFilter);
+    }
+
+    private void registerChangeMediaStateReceiver(){
+        changeMediaStateReceiver = new ChangeMediaStateReceiver();
+        IntentFilter intentFilter = new IntentFilter(MainActivity.CHANGE_MEDIA_STATE);
+        registerReceiver(changeMediaStateReceiver, intentFilter);
+    }
+
+    private void registerSkipSongReceiver(){
+        skipSongReceiver = new SkipSongReceiver();
+        IntentFilter intentFilter = new IntentFilter(MainActivity.SKIP_SONG);
+        registerReceiver(skipSongReceiver, intentFilter);
     }
 
     private void callStateListener(){
@@ -259,6 +279,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         if(mediaPlayer == null){ return;}
         if(mediaPlayer.isPlaying()){
             mediaPlayer.stop();
+            mediaPlayer.release();
         }
     }
 
@@ -299,7 +320,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     }
 
-
     private void removeAudioFocus(){
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -312,6 +332,79 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     public class LocalBinder extends Binder {
         public MediaPlayerService getService(){
             return MediaPlayerService.this;
+        }
+    }
+
+//    public class ProgressRunnable implements Runnable {
+//
+//        @Override
+//        public void run() {
+//            while(mediaPlayer.isPlaying()) {
+//                try {
+//                    Thread.sleep(1000);
+//                    Intent broadcastIntent = new Intent();
+//                    broadcastIntent.setAction(MainActivity.AUDIO_PROGRESS);
+//                    broadcastIntent.putExtra("currentPosition", mediaPlayer.getCurrentPosition());
+//                    sendBroadcast(broadcastIntent);
+//                } catch (InterruptedException e){
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//    }
+
+    private class BecomingNoisyReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            pauseMedia();
+        }
+    }
+
+    private class ChangeMediaStateReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if(mediaPlayer.isPlaying()){
+                mediaPlayer.pause();
+            } else {
+                mediaPlayer.start();
+            }
+        }
+    }
+
+    private class NextSongReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //If broadcast receives index for new song, stop media that is currently playing
+            stopMedia();
+
+            songIndex = intent.getIntExtra("songIndex", 0);
+            Song song = listOfSongs.get(songIndex);
+            mediaFile = song.getSongPath();
+            initMediaPlayer();
+            sendSongToActivity(song);
+        }
+    }
+
+    private class SkipSongReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int skipType = intent.getIntExtra("skipType", 0 );
+            if(skipType == MainActivity.SKIP_TO_NEXT){
+                stopMedia();
+
+                int newSongIndex = songIndex + 1;
+                if(newSongIndex != -1 && newSongIndex < listOfSongs.size()){
+                    songIndex = newSongIndex;
+                    mediaFile = listOfSongs.get(songIndex).getSongPath();
+                    initMediaPlayer();
+                    sendSongToActivity(listOfSongs.get(songIndex));
+                    //sendSongProgressToActivity();
+                }
+            }
         }
     }
 }
