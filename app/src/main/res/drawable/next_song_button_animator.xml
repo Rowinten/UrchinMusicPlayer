@@ -11,10 +11,10 @@
             android:height="24dp"
             android:width="42dp">
             <path android:name="path"
-                android:fillColor="#000000"
+                android:fillColor="@color/buttonColors"
                 android:pathData="M 8 5 L 8 19 L 19 12 Z"/>
             <path android:name="path_1"
-                android:fillColor="#000000"
+                android:fillColor="@color/buttonColors"
                 android:pathData="M 19 5 L 19 19 L 30 12 Z"/>
         </vector>
     </aapt:attr>

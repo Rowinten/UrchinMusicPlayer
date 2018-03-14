@@ -19,7 +19,7 @@
             android:pivotX="12">
         <path
             android:name="play_icon"
-            android:fillColor="#000000"
+            android:fillColor="@color/buttonColors"
             android:pathData="M 8 5 L 8 19 L 19 12 Z"/>
 
         </group>

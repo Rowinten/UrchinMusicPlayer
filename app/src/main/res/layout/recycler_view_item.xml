@@ -5,7 +5,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="60dp"
-    android:background="@color/colorPrimaryDark"
     android:id="@+id/item_background">
 
     <TextView
@@ -17,6 +16,7 @@
         android:layout_marginTop="11dp"
         android:textColor="@color/recyclerTitleColor"
         android:textSize="14sp"
+        android:textStyle="bold"
         android:fontFamily="@font/roboto"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

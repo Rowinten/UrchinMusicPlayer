@@ -10,30 +10,43 @@ import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.MediaPlayer;
-import android.os.Build;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.LightingColorFilter;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.media.Image;
+import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.RequiresApi;
+import android.support.constraint.ConstraintLayout;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.devs.vectorchildfinder.VectorChildFinder;
+import com.devs.vectorchildfinder.VectorDrawableCompat;
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.SectionsPagerAdapter;
 import com.example.rowin.urchinmusicplayer.model.MediaPlayerService;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-
 import com.example.rowin.urchinmusicplayer.util.SongManager;
+import com.jgabrielfreitas.core.BlurImageView;
 
 import java.io.File;
 
@@ -61,28 +74,75 @@ public class MainActivity extends AppCompatActivity {
     public ProgressBar audioProgressBar;
     public ImageView playButton, nextSongButton, backAlbumCoverView, frontAlbumCoverView;
     public View frontAlbumCoverLayout, backAlbumCoverLayout;
-    public TextView songTitleView, songBandView;
+    public TextView songTitleView, songArtistView;
+    public RelativeLayout mainView;
+    private TabLayout tabLayout;
+
+
 
     private boolean serviceBound = false;
     private Boolean isAlbumBackVisible = false;
     private Boolean statePlaying = false;
+
+    private Toolbar toolbar;
+    private ViewPager container;
+    private TabLayout tabs;
+    private ConstraintLayout currentlyPlayingTab;
+    private AppBarLayout appBar;
+    private BlurImageView blurImageView;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        createServiceConnection();
         initializeViews();
+        songTitleView.setSelected(true);
 
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},1);
 
-        createServiceConnection();
+
+
+        Window window = getWindow();
+        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+
+        toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
+        toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
+        tabs.setPadding(0,0,0, getNavigationBarHeight());
+
+
+
         registerSongBroadcastReceiver();
         registerAudioProgressBroadcastReceiver();
 
         playButtonOnClick();
         nextSongButtonOnClick();
+    }
+
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    private int getNavigationBarHeight(){
+        int result = 0;
+        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    private void initSongTab(Song song){
+        songTitleView.setText(song.getSongName());
+        songArtistView.setText(song.getArtist());
+        frontAlbumCoverView.setImageBitmap(getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
     }
 
     private void sendSkipSongRequest(int skipType){
@@ -134,9 +194,13 @@ public class MainActivity extends AppCompatActivity {
                     MusicStorage musicStorage = new MusicStorage(this);
                     musicStorage.storeAudio(manager.getSongsFromMusicDirectory());
 
-                    //listOfSongs =  manager.getSongList();
 
-                    //listOfSongs = MusicStorage.getInstance().getListOfSongs();
+                    if(musicStorage.getLastPlayedSong() != null){
+                        initSongTab(musicStorage.getLastPlayedSong());
+                        playAudio(musicStorage.loadAudioIndex());
+                    }
+
+
                     setAdapterForViewPager();
                 } else {
                     //TODO Add function to close application if permission is denied
@@ -150,10 +214,21 @@ public class MainActivity extends AppCompatActivity {
     private void initializeViews(){
         animations = new Animations(this);
 
+
+        toolbar = findViewById(R.id.toolbar);
+        container = findViewById(R.id.container);
+        tabs = findViewById(R.id.tabs);
+        currentlyPlayingTab = findViewById(R.id.include_play_tab);
+        appBar = findViewById(R.id.appbar);
+        mainView = findViewById(R.id.main_view);
+//        viewPagerTabsContainer = findViewById(R.id.viewpager_tabs_container);
+
+        blurImageView = findViewById(R.id.blur_image_view);
+
         playButton = findViewById(R.id.play_pause_button);
         nextSongButton = findViewById(R.id.next_song_button);
         songTitleView = findViewById(R.id.song_title_view_currently_playing_tab);
-        songBandView = findViewById(R.id.song_band_name_view_currently_playing_tab);
+        songArtistView = findViewById(R.id.song_band_name_view_currently_playing_tab);
         frontAlbumCoverLayout = findViewById(R.id.front_album_cover_layout);
         backAlbumCoverLayout = findViewById(R.id.back_album_cover_layout);
 
@@ -235,13 +310,6 @@ public class MainActivity extends AppCompatActivity {
         return BitmapFactory.decodeFile(image.getAbsolutePath(),bmOptions);
     }
 
-    //Sets the song title and band name in the TextViews from the currently_playing_song_tab.xml
-    private void updateTextViews(Song song){
-        songTitleView.setText(song.getSongName());
-        songBandView.setText(song.getArtist());
-    }
-
-
     private void nextSongButtonOnClick(){
         nextSongButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -258,16 +326,25 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 //If no music is playing and button is clicked, change play animation for play to pause button
                 // else play the opposite animation
-                if(!statePlaying){
-                    animations.playToPauseAnimation(playButton);
-                    statePlaying = true;
+                if(!statePlaying) {
+                    changePlayButtonStateToPause();
                 } else {
-                    animations.pauseToPlayAnimation(playButton);
-                    statePlaying = false;
+                    changePlayButtonStateToPlay();
                 }
+
                 sendChangeMediaStateRequest();
             }
         });
+    }
+
+    private void changePlayButtonStateToPause(){
+        animations.playToPauseAnimation(playButton);
+        statePlaying = true;
+    }
+
+    private void changePlayButtonStateToPlay(){
+        animations.pauseToPlayAnimation(playButton);
+        statePlaying = false;
     }
 
     private void setAdapterForViewPager(){
@@ -276,9 +353,10 @@ public class MainActivity extends AppCompatActivity {
 
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        TabLayout tabLayout = findViewById(R.id.tabs);
+        tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
         mSectionsPagerAdapter.createTabIcons(tabLayout);
+
 
         tabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -298,17 +376,107 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private Animation.AnimationListener setArtistTitleWithAnimation(final Song song){
+        return new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+                songArtistView.setVisibility(View.GONE);
+                songTitleView.setVisibility(View.GONE);
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                Animation a = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_out_animation);
+                songArtistView.setVisibility(View.VISIBLE);
+                songArtistView.startAnimation(a);
+
+                songTitleView.setVisibility(View.VISIBLE);
+                songTitleView.startAnimation(a);
+
+                songArtistView.setText(song.getArtist());
+                songTitleView.setText(song.getSongName());
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        };
+    }
+
     class SongBroadCastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            Song song = intent.getParcelableExtra("song");
+            final Song song = intent.getParcelableExtra("song");
             Long songDuration = intent.getLongExtra("songDuration", 0);
+            int albumCoverColor = intent.getIntExtra("albumCoverColor", 0);
 
             changeAlbumCoverPicture(getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
             initProgressBar(songDuration);
-            updateTextViews(song);
+
+            Animation fadeInAnimation = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_in_animation);
+            fadeInAnimation.setAnimationListener(setArtistTitleWithAnimation(song));
+
+            songTitleView.startAnimation(fadeInAnimation);
+            songArtistView.startAnimation(fadeInAnimation);
+
+            if(!statePlaying) {
+                changePlayButtonStateToPause();
+            }
+
+
+
+            tabs.setBackground(getResources().getDrawable(R.color.currentlyPlayingTabTransparency));
+            currentlyPlayingTab.setBackground(getResources().getDrawable(R.color.currentlyPlayingTabTransparency));
+            toolbar.setBackground(getResources().getDrawable(R.drawable.toolbar_gradient_background));
+
+            appBar.setBackground(getResources().getDrawable(R.color.transparent));
+            container.setBackground(getResources().getDrawable(R.color.viewPagerTransparency));
+
+            Bitmap background = getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+            blurImageView.setImageBitmap(background);
+            blurImageView.setBlur(15);
+
+            mSectionsPagerAdapter.setIconColor(albumCoverColor);
+
+            int pos = tabLayout.getSelectedTabPosition();
+
+
+            //TODO CLEAN UP THIS DAMN MESS, DUPLICATE CODE ( ALSO IN SECTIONPAGER ADAPTER ) 
+            switch(pos) {
+                case 0:
+                    ImageView songTabView = (ImageView) tabLayout.getTabAt(pos).getCustomView();
+                    VectorChildFinder vector = new VectorChildFinder(context, R.drawable.ic_song_tab_icon_unfocused, songTabView);
+                    VectorDrawableCompat.VFullPath path = vector.findPathByName("song_tab_icon_unfocused_path");
+                    path.setFillColor(albumCoverColor);
+                    path.setStrokeColor(albumCoverColor);
+                    break;
+                case 1:
+                    ImageView albumTabView = (ImageView) tabLayout.getTabAt(pos).getCustomView();
+                    VectorChildFinder vector1 = new VectorChildFinder(context, R.drawable.ic_album_tab_icon_unfocused, albumTabView);
+                    VectorDrawableCompat.VFullPath path1 = vector1.findPathByName("album_tab_icon_unfocused_path");
+                    path1.setFillColor(albumCoverColor);
+                    path1.setStrokeColor(albumCoverColor);
+                    break;
+                case 2:
+                    ImageView playlistTabView = (ImageView) tabLayout.getTabAt(pos).getCustomView();
+
+                    VectorChildFinder vector2 = new VectorChildFinder(context, R.drawable.ic_playlist_tab_icon_unfocused, playlistTabView);
+                    VectorDrawableCompat.VFullPath path2 = vector2.findPathByName("playlist_tab_icon_unfocused_left_path");
+                    path2.setFillColor(albumCoverColor);
+                    path2.setStrokeColor(albumCoverColor);
+
+                    VectorDrawableCompat.VFullPath path3 = vector2.findPathByName("playlist_tab_icon_unfocused_right_path");
+                    path3.setFillColor(albumCoverColor);
+                    path3.setStrokeColor(albumCoverColor);
+                    break;
+
+            }
+
         }
+
 
         private void initProgressBar(Long songDuration){
             audioProgressBar.setProgress(0);

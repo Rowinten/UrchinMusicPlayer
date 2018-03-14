@@ -54,6 +54,17 @@ public class MusicStorage {
         return sharedPreferences.getInt("audioIndex", -1);//return -1 if no data found
     }
 
+    public Song getLastPlayedSong(){
+        ArrayList<Song> listOfSongs = loadAudio();
+        Integer index = loadAudioIndex();
+
+        if(index != -1){
+            return listOfSongs.get(index);
+        }
+
+        return null;
+    }
+
     public void clearCachedAudioPlaylist() {
         sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();

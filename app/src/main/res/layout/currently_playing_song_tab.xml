@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/currently_playing_song_tab"
     android:layout_width="match_parent"
-    android:layout_height="65dp"
+    android:layout_height="60dp"
+    android:layout_below="@+id/toolbar"
     android:background="@color/colorPrimary">
 
 
@@ -11,17 +12,17 @@
         android:id="@+id/separator_line"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="@color/colorPrimaryDark"
+        android:background="@color/currentlyPlayingStartColor"
         app:layout_constraintTop_toTopOf="parent"
         />
 
     <FrameLayout
         android:id="@+id/front_album_cover_layout"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
         app:layout_constraintBottom_toTopOf="@+id/audio_progress_bar"
         app:layout_constraintStart_toStartOf="parent">
 
@@ -31,34 +32,36 @@
 
     <FrameLayout
         android:id="@+id/back_album_cover_layout"
-        android:layout_width="45dp"
-        android:layout_height="45dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginBottom="8dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
         app:layout_constraintBottom_toTopOf="@+id/audio_progress_bar"
         app:layout_constraintStart_toStartOf="parent">
 
-        <include
-            layout="@layout/album_front"
-            tools:layout_editor_absoluteX="16dp"
-            tools:layout_editor_absoluteY="0dp" />
+        <include layout="@layout/album_front" />
 
     </FrameLayout>
 
     <TextView
         android:id="@+id/song_title_view_currently_playing_tab"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="6dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="10dp"
+        android:ellipsize="marquee"
+        android:focusable="true"
         android:fontFamily="@font/roboto"
-        android:text="The Stage"
-        android:textColor="@color/recyclerTitleColor"
+        android:marqueeRepeatLimit="marquee_forever"
+        android:scrollHorizontally="true"
+        android:singleLine="true"
+        android:text="No audio has been selected yet"
+        android:textColor="@color/songTabTextColor"
         android:textSize="14sp"
-        app:layout_constraintEnd_toStartOf="@+id/play_pause_button"
-        app:layout_constraintHorizontal_bias="0.657"
+        app:layout_constraintEnd_toStartOf="@+id/previous_song_button"
+        app:layout_constraintHorizontal_bias="0.125"
         app:layout_constraintStart_toEndOf="@+id/back_album_cover_layout"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -66,27 +69,26 @@
         android:id="@+id/song_band_name_view_currently_playing_tab"
         android:layout_width="wrap_content"
         android:layout_height="18dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="6dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
         android:fontFamily="@font/roboto"
-        android:text="Avenged Sevenfold"
-        android:textColor="@color/recyclerSubTitleColor"
+        android:text=""
+        android:textColor="@color/songTabTextColor"
         android:textSize="12sp"
         app:layout_constraintBottom_toTopOf="@+id/audio_progress_bar"
         app:layout_constraintEnd_toStartOf="@+id/play_pause_button"
-        app:layout_constraintHorizontal_bias="0.717"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/back_album_cover_layout"
-        app:layout_constraintTop_toBottomOf="@+id/song_title_view_currently_playing_tab"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintTop_toTopOf="@+id/song_title_view_currently_playing_tab" />
 
     <ImageView
         android:id="@+id/play_pause_button"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:layout_marginBottom="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginBottom="4dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="4dp"
         app:layout_constraintBottom_toTopOf="@+id/audio_progress_bar"
         app:layout_constraintEnd_toStartOf="@+id/next_song_button"
         app:layout_constraintTop_toTopOf="parent"
@@ -94,11 +96,27 @@
 
     <ImageView
         android:id="@+id/next_song_button"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginTop="8dp"
         android:src="@drawable/next_song_button_animator"
         app:layout_constraintBottom_toTopOf="@+id/audio_progress_bar"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.571" />
+
+    <ImageView
+        android:id="@+id/previous_song_button"
+        android:layout_width="45dp"
+        android:layout_height="45dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:rotation="180"
+        android:src="@drawable/next_song_button_animator"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/play_pause_button"
         app:layout_constraintTop_toTopOf="parent" />
 
     <ProgressBar

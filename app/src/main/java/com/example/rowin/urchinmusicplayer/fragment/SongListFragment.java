@@ -1,5 +1,13 @@
 package com.example.rowin.urchinmusicplayer.fragment;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -9,16 +17,14 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
-import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.PlayAudio;
 
+import java.io.File;
 import java.util.ArrayList;
 
 /**
@@ -27,11 +33,10 @@ import java.util.ArrayList;
 
 //TODO RecyclerView overlaps with the currently_playing_tab_view
 public class SongListFragment extends Fragment{
+    private ChangeHighlightedTabReceiver changeHighlightedTabReceiver;
 
     private RecyclerView songListRecyclerView;
-    private RecyclerViewAdapter.ViewHolder previouslyTabbedItemView;
-
-
+    private RecyclerViewAdapter recyclerViewAdapter;
 
     public SongListFragment(){
 
@@ -50,48 +55,69 @@ public class SongListFragment extends Fragment{
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
         songListRecyclerView.setLayoutManager(layoutManager);
 
+        recyclerViewAdapter.setSelected(musicStorage.loadAudioIndex());
+
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        registerChangeHighlightedTabReceiver();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        getActivity().unregisterReceiver(changeHighlightedTabReceiver);
     }
 
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
     }
 
+    private void registerChangeHighlightedTabReceiver(){
+        changeHighlightedTabReceiver = new ChangeHighlightedTabReceiver();
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(MainActivity.BROADCAST_ACTION);
+        getActivity().registerReceiver(changeHighlightedTabReceiver, intentFilter);
+    }
+
 
     private RecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
-        return new RecyclerViewAdapter(listOfSongs, new RecyclerViewAdapter.OnItemClickListener() {
+        recyclerViewAdapter =  new RecyclerViewAdapter(getContext(), listOfSongs, new RecyclerViewAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(RecyclerViewAdapter.ViewHolder holder, Song song) {
-                changeItemViewTitleColor(holder);
-
-                //If no Music is playing, change play icon to pause icon when song is clicked
-                //If song is playing then do nothing for the animation. since the pause button is already visible.
-//                if(!Globals.isMusicPlaying) {
-//                    animations.playToPauseAnimation(playButton);
-//                    Globals.isMusicPlaying = true;
-//                }
-
+            public void onItemClick(int position, Song song) {
                 int index = listOfSongs.indexOf(song);
                 ((MainActivity) getActivity()).playAudio(index);
             }
         });
+
+        return recyclerViewAdapter;
     }
 
-    private void changeItemViewTitleColor(RecyclerViewAdapter.ViewHolder holder){
-        RecyclerViewAdapter.ViewHolder currentlyTabbedItemView = holder;
-        currentlyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitlePressedColor));
 
-        //Checks if the user tapped the same itemView, so that the currently highlighted itemView stays highlighted
-        if (currentlyTabbedItemView != previouslyTabbedItemView) {
-            //If a previousItemView has already been tabbed, change color back to standard color. To let user know this item is no longer in focus
-            if(previouslyTabbedItemView != null){
-                previouslyTabbedItemView.songTitleView.setTextColor(getResources().getColor(R.color.recyclerTitleColor));
-            }
-        } else {
-            //Do Nothing
+    private void changeSelectedTab(int position, int color){
+        if(!recyclerViewAdapter.isSelected(position)){
+            recyclerViewAdapter.setTextColor(color);
+            recyclerViewAdapter.setSelected(position);
         }
-        previouslyTabbedItemView = currentlyTabbedItemView;
     }
 
+    class ChangeHighlightedTabReceiver extends BroadcastReceiver {
 
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int newPosition = intent.getIntExtra("newIndex", 0);
+            int color = intent.getIntExtra("albumCoverColor", 0);
+
+            changeSelectedTab(newPosition, color);
+
+            songListRecyclerView.scrollToPosition(newPosition);
+
+        }
+    }
 }

@@ -1,56 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/main_view"
     android:fitsSystemWindows="true"
     tools:context="com.example.rowin.urchinmusicplayer.activity.MainActivity">
 
-    <android.support.design.widget.AppBarLayout
-        android:id="@+id/appbar"
+    <com.jgabrielfreitas.core.BlurImageView
+        android:id="@+id/blur_image_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/AppTheme.AppBarOverlay">
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:scaleType="fitXY"
+        app:radius="24" />
 
-        <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:background="@color/toolbarColor"
-            app:layout_scrollFlags="scroll|enterAlways"
-            app:popupTheme="@style/AppTheme.PopupOverlay">
-
-            <TextView
-                style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:fontFamily="@font/roboto"
-                android:text="@string/song_overview_title"
-                android:textAllCaps="false" />
-
-        </android.support.v7.widget.Toolbar>
-
-        <include layout="@layout/currently_playing_song_tab"/>
-
-    </android.support.design.widget.AppBarLayout>
-
+    <include
+        android:id="@+id/include"
+        layout="@layout/toolbar_layout" />
 
     <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent">
+        android:id="@+id/viewpager_tabs_container"
+        android:scaleType="centerCrop"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/include">
 
         <android.support.v4.view.ViewPager
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_above="@+id/tabs"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="118dp"
+            android:background="@color/viewGroupColor"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
         <android.support.design.widget.TabLayout
@@ -61,7 +44,7 @@
             android:layout_alignParentStart="true"
             android:background="@color/colorPrimary"
             app:tabIndicatorHeight="0dp"
-            app:tabTextColor="@color/tabUnselectedTextColor"
+
             >
 
             <android.support.design.widget.TabItem
@@ -80,7 +63,8 @@
                 android:layout_height="wrap_content" />
 
         </android.support.design.widget.TabLayout>
+
     </RelativeLayout>
 
 
-</android.support.constraint.ConstraintLayout>
+</RelativeLayout>

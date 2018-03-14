@@ -1,14 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- previous color scheme (Black) -->
+
     <color name="colorPrimary">#212121</color>
     <color name="toolbarColor">#161616</color>
     <color name="colorPrimaryDark">#000000</color>
     <color name="colorAccent">#D50000</color>
     <color name="navigationBarColor">#212121</color>
-    <color name="white">#FFFFFF</color>
+
+    <color name="songTabTextColor">#FFFFFF</color>
+
+    <!-- color for buttons (playbutton ect. ) -->
+    <color name="buttonColors">#FFFFFF</color>
+
+    <!--Colors for the tab icons -->
+    <color name="tabIconStrokeColor">@color/recyclerSubTitleColor</color>
+    <color name="tabIconFillColor">@color/recyclerSubTitleColor</color>
+    <color name="tabTextColorUnselected">@color/recyclerSubTitleColor</color>
+    <color name="tabIconColorSelected">@color/colorAccent</color>
+    <color name="tabTextColorSelected">#FFFFFF</color>
+
+    <color name="viewGroupColor">@color/colorPrimaryDark</color>
+
     <color name="recyclerTitleColor">#FFFFFF</color>
-    <color name="recyclerTitlePressedColor">#D50000</color>
     <color name="recyclerSubTitleColor">@android:color/darker_gray</color>
-    <color name="tabSelectedTextColor">#ffffff</color>
-    <color name="tabUnselectedTextColor">#b3b3b3</color>
+    <color name="recyclerTitlePressedColor">#D50000</color>
+
+
+    <!--<color name="colorPrimary">#8BC34A</color>-->
+    <!--<color name="toolbarColor">#689F38</color>-->
+    <!--<color name="colorPrimaryDark">#33691E</color>-->
+    <!--<color name="colorAccent">#9C27B0</color>-->
+    <!--<color name="navigationBarColor">#AED581</color>-->
+
+    <!--<color name="songTabTextColor">#FFFFFF</color>-->
+
+    <!--&lt;!&ndash; color for buttons (playbutton ect. ) &ndash;&gt;-->
+    <!--<color name="buttonColors">@color/colorAccent</color>-->
+
+    <!--&lt;!&ndash;Colors for the tab icons &ndash;&gt;-->
+    <!--<color name="tabIconStrokeColor">@color/toolbarColor</color>-->
+    <!--<color name="tabIconFillColor">@color/toolbarColor</color>-->
+    <!--<color name="tabTextColorUnselected">@color/colorPrimaryDark</color>-->
+    <!--<color name="tabIconColorSelected">@color/colorAccent</color>-->
+    <!--<color name="tabTextColorSelected">#FFFFFF</color>-->
+
+    <!--&lt;!&ndash; Color for viewgroup &ndash;&gt;-->
+    <!--<color name="viewGroupColor">#F1F8E9</color>-->
+
+    <!--&lt;!&ndash; Color for recyclerView items &ndash;&gt;-->
+    <!--<color name="recyclerTitlePressedColor">@color/colorAccent</color>-->
+    <!--<color name="recyclerSubTitleColor">@android:color/darker_gray</color>-->
+    <!--<color name="recyclerTitleColor">#000000</color>-->
+
+    <color name="transparent">@android:color/transparent</color>
+
+    <color name="currentlyPlayingTabTransparency">#80000000</color>
+    <color name="viewPagerTransparency">#4D000000</color>
+
+    <color name="toolBarTransparent">#B3000000</color>
+
+    <color name="currentlyPlayingStartColor">#40212121</color>
+    <color name="currentlyPlayingEndColor">#8C000000</color>
+    <color name="toolbarEndColor">#BF000000</color>
+
+    <color name="white">#FFFFFF</color>
+
 </resources>

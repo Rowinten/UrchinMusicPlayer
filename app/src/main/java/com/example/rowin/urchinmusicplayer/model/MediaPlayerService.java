@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -15,8 +17,10 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
+import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,12 +35,15 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private final IBinder iBinder = new LocalBinder();
     private MediaPlayer mediaPlayer;
     private ArrayList<Song> listOfSongs;
-    private int songIndex;
+    private Integer songIndex;
     //path to the audio file
     private String mediaFile;
     private int resumePosition;
+    private boolean songHasBeenPlayed = false;
 
     private AudioManager audioManager;
+    private MusicStorage musicStorage;
+    private PathToBitmapConverter pathToBitmapConverter;
     private AudioFocusRequest audioFocusRequest;
     private BecomingNoisyReceiver becomingNoisyReceiver;
     private NextSongReceiver nextSongReceiver;
@@ -69,8 +76,10 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        MusicStorage musicStorage = new MusicStorage(getApplicationContext());
+        pathToBitmapConverter = new PathToBitmapConverter();
+        musicStorage = new MusicStorage(getApplicationContext());
         songIndex = musicStorage.loadAudioIndex();
+
         listOfSongs = musicStorage.loadAudio();
         Song songToBePlayed = listOfSongs.get(songIndex);
 
@@ -82,8 +91,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         }
 
         if(requestAudioFocus()){
-            initMediaPlayer();
-            sendSongToActivity(songToBePlayed);
+            initAndPrepareMediaPlayer();
+
             //sendSongProgressToActivity();
         } else {
             stopSelf();
@@ -118,7 +127,9 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             songIndex = newSongIndex;
             Song song = listOfSongs.get(songIndex);
             mediaFile = song.getSongPath();
-            initMediaPlayer();
+
+            initAndPrepareMediaPlayer();
+
             sendSongToActivity(song);
             //sendSongProgressToActivity();
         }
@@ -134,7 +145,14 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
-        playMedia();
+        //On startup of application, the app looks if there is a song stored in SharedPreferences and loads in it the "song tab" (view that displays currently playing song)
+        //When there is a song loaded in SharedPreferences we want the song prepared and initialized but not yet playing. On startup the lastly played song gets initialized
+        //and prepared  but not played. all songs that the user selects afterwards get prepared and played immediately.
+        if(songIndex != null && !songHasBeenPlayed) {
+            songHasBeenPlayed = true;
+        } else {
+            playMedia();
+        }
 
         //sendSongProgressToActivity();
     }
@@ -180,11 +198,86 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     private void sendSongToActivity(Song song){
         Intent broadCastIntent = new Intent();
+
+        int dominantColorAlbumCover = getDominantColor(pathToBitmapConverter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
+        int complimentedColor = getComplimentedColor(dominantColorAlbumCover);
+
         broadCastIntent.setAction(MainActivity.BROADCAST_ACTION);
         broadCastIntent.putExtra("songDuration", song.getDuration());
         broadCastIntent.putExtra("song", song);
+        broadCastIntent.putExtra("albumCoverColor", complimentedColor);
+        broadCastIntent.putExtra("newIndex", songIndex);
         sendBroadcast(broadCastIntent);
     }
+
+    public int getDominantColor(Bitmap bitmap) {
+        if (bitmap == null) {
+            return Color.TRANSPARENT;
+        }
+        int width = bitmap.getWidth();
+        int height = bitmap.getHeight();
+        int size = width * height;
+        int pixels[] = new int[size];
+        //Bitmap bitmap2 = bitmap.copy(Bitmap.Config.ARGB_43444, false);
+        bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+        int color;
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        int a;
+        int count = 0;
+        for (int i = 0; i < pixels.length; i++) {
+            color = pixels[i];
+            a = Color.alpha(color);
+            if (a > 0) {
+                r += Color.red(color);
+                g += Color.green(color);
+                b += Color.blue(color);
+                count++;
+            }
+        }
+        r /= count;
+        g /= count;
+        b /= count;
+        r = (r << 16) & 0x00FF0000;
+        g = (g << 8) & 0x0000FF00;
+        b = b & 0x000000FF;
+        color = 0xFF000000 | r | g | b;
+        return color;
+    }
+
+    public int getComplimentedColor(int color) {
+        // get existing colors
+        int alpha = Color.alpha(color);
+        int red = Color.red(color);
+        int blue = Color.blue(color);
+        int green = Color.green(color);
+
+        double luma = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+
+        if(luma < 40 || luma > 220){
+            red = 51;
+            green = 102;
+            blue = 255;
+        } else {
+            //Adds value to the dominant value of a color, making it pop out more.
+            if (red > blue && red > green && red + 60 < 255) {
+                red = red + 50;
+            }
+
+            if (green > red && green > blue && green + 60 < 255) {
+                green = green + 50;
+            }
+
+            if (blue > red && blue > green && blue + 60 < 255) {
+                blue = blue + 50;
+            }
+        }
+
+
+        return Color.argb(alpha, red, green, blue);
+    }
+
 
 //    private void sendSongProgressToActivity(){
 //        ProgressRunnable progressRunnable = new ProgressRunnable();
@@ -266,6 +359,10 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             e.printStackTrace();
             stopSelf();
         }
+    }
+
+    private void initAndPrepareMediaPlayer(){
+        initMediaPlayer();
         mediaPlayer.prepareAsync();
     }
 
@@ -383,7 +480,9 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             songIndex = intent.getIntExtra("songIndex", 0);
             Song song = listOfSongs.get(songIndex);
             mediaFile = song.getSongPath();
-            initMediaPlayer();
+            musicStorage.storeAudioIndex(songIndex);
+
+            initAndPrepareMediaPlayer();
             sendSongToActivity(song);
         }
     }
@@ -394,13 +493,16 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         public void onReceive(Context context, Intent intent) {
             int skipType = intent.getIntExtra("skipType", 0 );
             if(skipType == MainActivity.SKIP_TO_NEXT){
-                stopMedia();
-
                 int newSongIndex = songIndex + 1;
                 if(newSongIndex != -1 && newSongIndex < listOfSongs.size()){
+                    stopMedia();
+
                     songIndex = newSongIndex;
                     mediaFile = listOfSongs.get(songIndex).getSongPath();
-                    initMediaPlayer();
+                    musicStorage.storeAudioIndex(newSongIndex);
+
+                    initAndPrepareMediaPlayer();
+
                     sendSongToActivity(listOfSongs.get(songIndex));
                     //sendSongProgressToActivity();
                 }

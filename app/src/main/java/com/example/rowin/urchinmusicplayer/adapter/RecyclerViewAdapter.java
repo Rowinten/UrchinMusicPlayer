@@ -1,5 +1,6 @@
 package com.example.rowin.urchinmusicplayer.adapter;
 
+import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,14 +21,23 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     private ArrayList<Song> listOfSongs;
     private final OnItemClickListener listener;
+    private Context context;
+
+    //TODO APP NEEDS TO GET COLOR PREVIOUSLY USED IN PREVIOUS SESSION
+
+    private int textColor;
+
+    private int checkedPosition = -1;
 
     public interface OnItemClickListener{
-        void onItemClick(ViewHolder holder, Song song);
+        void onItemClick(int position, Song song);
     }
 
-    public RecyclerViewAdapter(ArrayList<Song> listOfSongs, OnItemClickListener listener){
+    public RecyclerViewAdapter(Context context, ArrayList<Song> listOfSongs, OnItemClickListener listener){
         this.listOfSongs = listOfSongs;
         this.listener = listener;
+        this.context = context;
+        textColor = context.getResources().getColor(R.color.recyclerTitlePressedColor);
     }
 
 
@@ -46,15 +56,26 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             songDurationView = itemView.findViewById(R.id.song_duration_view);
         }
 
-        void bind(final Song song, final ViewHolder holder, final OnItemClickListener listener){
+        void bind(final Song song,int position,  final ViewHolder holder, final OnItemClickListener listener){
             songTitleView.setText(song.getSongName());
             songBandNameView.setText(song.getArtist());
             songDurationView.setText(convertToDuration(song.getDuration()));
 
+            if(position == checkedPosition){
+                songTitleView.setTextColor(textColor);
+                songBandNameView.setTextColor(textColor);
+                songDurationView.setTextColor(textColor);
+            } else {
+                songTitleView.setTextColor(context.getResources().getColor(R.color.recyclerTitleColor));
+                songBandNameView.setTextColor(context.getResources().getColor(R.color.recyclerTitleColor));
+                songDurationView.setTextColor(context.getResources().getColor(R.color.recyclerTitleColor));
+            }
+
+
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    listener.onItemClick(holder, song);
+                    listener.onItemClick(holder.getAdapterPosition(), song);
                 }
             });
         }
@@ -69,12 +90,31 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        (holder).bind(listOfSongs.get(position), holder, listener);
+        (holder).bind(listOfSongs.get(position), position, holder, listener);
     }
 
     @Override
     public int getItemCount() {
         return listOfSongs.size();
+    }
+
+    public boolean isSelected(int position) {
+        return checkedPosition == position;
+    }
+
+    public void setSelected(int position){
+        int prevSelected = checkedPosition;
+        checkedPosition = position;
+
+        if(prevSelected != -1){
+            notifyItemChanged(prevSelected);
+        }
+
+        notifyItemChanged(checkedPosition);
+    }
+
+    public void setTextColor(int color){
+        this.textColor = color;
     }
 
     //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
