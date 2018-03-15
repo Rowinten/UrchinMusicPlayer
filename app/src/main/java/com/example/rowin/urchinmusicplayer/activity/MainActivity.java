@@ -9,14 +9,6 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.LightingColorFilter;
-import android.graphics.Matrix;
-import android.graphics.Paint;
-import android.media.Image;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.constraint.ConstraintLayout;
@@ -37,34 +29,28 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.devs.vectorchildfinder.VectorChildFinder;
-import com.devs.vectorchildfinder.VectorDrawableCompat;
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.SectionsPagerAdapter;
 import com.example.rowin.urchinmusicplayer.model.MediaPlayerService;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
+import com.example.rowin.urchinmusicplayer.util.AudioRequests;
+import com.example.rowin.urchinmusicplayer.util.ColorReader;
+import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
 import com.jgabrielfreitas.core.BlurImageView;
-
-import java.io.File;
-
-
 
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String BROADCAST_ACTION = "com.example.rowin.urchinmusicplayer.Broadcast";
-    public static final String PLAY_NEW_AUDIO = "com.example.rowin.urchinmusicplayer.PlayNewAudio";
-    public static final String AUDIO_PROGRESS = "com.example.rowin.urchinmusicplayer.AudioProgress";
-    public static final String SKIP_SONG = "com.example.rowin.urchinmusicplayer.SkipSong";
-    public static final String CHANGE_MEDIA_STATE = "com.example.rowin.urchinmusicplayer.PlayPause";
-
-    public static final int SKIP_TO_NEXT = 0;
-    public static final int SKIP_TO_PREVIOUS = 1;
+    private Boolean serviceBound = false;
+    private Boolean isAlbumBackVisible = false;
+    private Boolean statePlaying = false;
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
+    private PathToBitmapConverter pathToBitmapConverter;
+    private AudioRequests audioRequests;
     private Animations animations;
     private ServiceConnection serviceConnection;
     private MediaPlayerService playerService;
@@ -72,17 +58,11 @@ public class MainActivity extends AppCompatActivity {
     private AudioProgressBroadcastReceiver audioProgressBroadcastReceiver;
 
     public ProgressBar audioProgressBar;
-    public ImageView playButton, nextSongButton, backAlbumCoverView, frontAlbumCoverView;
+    public ImageView playButton, nextSongButton, previousSongButton, backAlbumCoverView, frontAlbumCoverView;
     public View frontAlbumCoverLayout, backAlbumCoverLayout;
     public TextView songTitleView, songArtistView;
     public RelativeLayout mainView;
-    private TabLayout tabLayout;
 
-
-
-    private boolean serviceBound = false;
-    private Boolean isAlbumBackVisible = false;
-    private Boolean statePlaying = false;
 
     private Toolbar toolbar;
     private ViewPager container;
@@ -90,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
     private ConstraintLayout currentlyPlayingTab;
     private AppBarLayout appBar;
     private BlurImageView blurImageView;
+    private TabLayout tabLayout;
 
 
     @Override
@@ -98,12 +79,15 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         createServiceConnection();
         initializeViews();
-        songTitleView.setSelected(true);
+        initializeClasses();
+        //songTitleView.setSelected(true);
 
+        //Requests permission to read external storage for music files
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},1);
 
 
+        //TODO window code own method;
 
         Window window = getWindow();
         window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
@@ -119,43 +103,7 @@ public class MainActivity extends AppCompatActivity {
 
         playButtonOnClick();
         nextSongButtonOnClick();
-    }
-
-    private int getStatusBarHeight() {
-        int result = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
-    private int getNavigationBarHeight(){
-        int result = 0;
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
-    private void initSongTab(Song song){
-        songTitleView.setText(song.getSongName());
-        songArtistView.setText(song.getArtist());
-        frontAlbumCoverView.setImageBitmap(getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
-    }
-
-    private void sendSkipSongRequest(int skipType){
-        Intent skipSongIntent = new Intent();
-        skipSongIntent.setAction(SKIP_SONG);
-        skipSongIntent.putExtra("skipType", skipType);
-        sendBroadcast(skipSongIntent);
-    }
-
-    private void sendChangeMediaStateRequest(){
-        Intent changeMediaStateIntent = new Intent();
-        changeMediaStateIntent.setAction(CHANGE_MEDIA_STATE);
-        sendBroadcast(changeMediaStateIntent);
+        previousButtonOnClick();
     }
 
     @Override
@@ -192,16 +140,31 @@ public class MainActivity extends AppCompatActivity {
                     // permission granted and now can proceed
                     SongManager manager = new SongManager(this);
                     MusicStorage musicStorage = new MusicStorage(this);
+                    ColorReader colorReader = new ColorReader();
                     musicStorage.storeAudio(manager.getSongsFromMusicDirectory());
 
 
-                    if(musicStorage.getLastPlayedSong() != null){
-                        initSongTab(musicStorage.getLastPlayedSong());
-                        playAudio(musicStorage.loadAudioIndex());
-                    }
-
-
                     setAdapterForViewPager();
+
+
+                    //TODO CLEAN UP
+
+                    if(musicStorage.getLastPlayedSong() != null){
+                        Song lastPlayedSong = musicStorage.getLastPlayedSong();
+                        Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
+                        initializeSongTab(lastPlayedSong);
+                        playAudio(musicStorage.loadAudioIndex());
+
+                        setAllViewsTransparent();
+                        blurBackgroundImage(albumCover);
+
+                        int dominantColor = colorReader.getDominantColor(albumCover);
+                        int complimentedDominantColor = colorReader.getComplimentedColor(dominantColor);
+
+
+                        mSectionsPagerAdapter.setIconColor(complimentedDominantColor);
+                        mSectionsPagerAdapter.changeTabToSelected(tabLayout.getTabAt(0), 0);
+                    }
                 } else {
                     //TODO Add function to close application if permission is denied
                     // permission denied
@@ -212,21 +175,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void initializeViews(){
-        animations = new Animations(this);
-
-
         toolbar = findViewById(R.id.toolbar);
         container = findViewById(R.id.container);
         tabs = findViewById(R.id.tabs);
         currentlyPlayingTab = findViewById(R.id.include_play_tab);
         appBar = findViewById(R.id.appbar);
         mainView = findViewById(R.id.main_view);
-//        viewPagerTabsContainer = findViewById(R.id.viewpager_tabs_container);
 
         blurImageView = findViewById(R.id.blur_image_view);
 
         playButton = findViewById(R.id.play_pause_button);
         nextSongButton = findViewById(R.id.next_song_button);
+        previousSongButton = findViewById(R.id.previous_song_button);
         songTitleView = findViewById(R.id.song_title_view_currently_playing_tab);
         songArtistView = findViewById(R.id.song_band_name_view_currently_playing_tab);
         frontAlbumCoverLayout = findViewById(R.id.front_album_cover_layout);
@@ -236,6 +196,20 @@ public class MainActivity extends AppCompatActivity {
         frontAlbumCoverView = findViewById(R.id.front_album_cover_view);
 
         audioProgressBar = findViewById(R.id.audio_progress_bar);
+    }
+
+    private void initializeClasses(){
+        animations = new Animations(this);
+        pathToBitmapConverter = new PathToBitmapConverter();
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this);
+        audioRequests = new AudioRequests(this);
+    }
+
+    private void initializeSongTab(Song song){
+        songTitleView.setText(song.getSongName());
+        songArtistView.setText(song.getArtist());
+        Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+        frontAlbumCoverView.setImageBitmap(albumCover);
     }
 
     private void createServiceConnection(){
@@ -254,20 +228,6 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
-    private void registerSongBroadcastReceiver(){
-        songBroadCastReceiver = new SongBroadCastReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BROADCAST_ACTION);
-        registerReceiver(songBroadCastReceiver, intentFilter);
-    }
-
-    private void registerAudioProgressBroadcastReceiver(){
-        audioProgressBroadcastReceiver = new AudioProgressBroadcastReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(AUDIO_PROGRESS);
-        registerReceiver(audioProgressBroadcastReceiver, intentFilter);
-    }
-
     public void playAudio(int index){
         if(!serviceBound){
             Intent playerIntent = new Intent(this, MediaPlayerService.class);
@@ -277,15 +237,27 @@ public class MainActivity extends AppCompatActivity {
             startService(playerIntent);
             bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         } else {
-            sendPlayNewSongRequest(index);
+            audioRequests.sendPlayNewSongRequest(index);
         }
     }
 
-    private void sendPlayNewSongRequest(int index){
-        Intent broadCastIntent = new Intent();
-        broadCastIntent.setAction(PLAY_NEW_AUDIO);
-        broadCastIntent.putExtra("songIndex", index);
-        sendBroadcast(broadCastIntent);
+
+    private int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    private int getNavigationBarHeight(){
+        int result = 0;
+        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
     }
 
     //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
@@ -303,19 +275,28 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private Bitmap getAlbumCoverFromMusicFile(String filePath){
-        File image = new File(filePath);
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-
-        return BitmapFactory.decodeFile(image.getAbsolutePath(),bmOptions);
+    private void blurBackgroundImage(Bitmap backgroundImage){
+        blurImageView.setImageBitmap(backgroundImage);
+        blurImageView.setBlur(15);
     }
+
 
     private void nextSongButtonOnClick(){
         nextSongButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 animations.nextSongAnimation(nextSongButton);
-                sendSkipSongRequest(SKIP_TO_NEXT);
+                audioRequests.sendSkipSongRequest(AudioRequests.SKIP_TO_NEXT);
+            }
+        });
+    }
+
+    private void previousButtonOnClick(){
+        previousSongButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                animations.nextSongAnimation(previousSongButton);
+                audioRequests.sendSkipSongRequest(AudioRequests.SKIP_TO_PREVIOUS);
             }
         });
     }
@@ -332,7 +313,7 @@ public class MainActivity extends AppCompatActivity {
                     changePlayButtonStateToPlay();
                 }
 
-                sendChangeMediaStateRequest();
+                audioRequests.sendChangeMediaStateRequest();
             }
         });
     }
@@ -348,7 +329,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setAdapterForViewPager(){
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this);
         ViewPager mViewPager = findViewById(R.id.container);
 
         mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -375,6 +355,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void setAllViewsTransparent(){
+        tabs.setBackground(getResources().getDrawable(R.color.currentlyPlayingTabTransparency));
+        currentlyPlayingTab.setBackground(getResources().getDrawable(R.color.currentlyPlayingTabTransparency));
+        toolbar.setBackground(getResources().getDrawable(R.drawable.toolbar_gradient_background));
+
+        appBar.setBackground(getResources().getDrawable(R.color.transparent));
+        container.setBackground(getResources().getDrawable(R.color.viewPagerTransparency));
+    }
+
 
     private Animation.AnimationListener setArtistTitleWithAnimation(final Song song){
         return new Animation.AnimationListener() {
@@ -405,78 +395,61 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
+    private void registerSongBroadcastReceiver(){
+        songBroadCastReceiver = new SongBroadCastReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(AudioRequests.BROADCAST_ACTION);
+        registerReceiver(songBroadCastReceiver, intentFilter);
+    }
+
+    private void registerAudioProgressBroadcastReceiver(){
+        audioProgressBroadcastReceiver = new AudioProgressBroadcastReceiver();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(AudioRequests.AUDIO_PROGRESS);
+        registerReceiver(audioProgressBroadcastReceiver, intentFilter);
+    }
+
     class SongBroadCastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            final Song song = intent.getParcelableExtra("song");
+            Song song = intent.getParcelableExtra("song");
             Long songDuration = intent.getLongExtra("songDuration", 0);
             int albumCoverColor = intent.getIntExtra("albumCoverColor", 0);
 
-            changeAlbumCoverPicture(getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
+            String albumCoverPath = song.getAlbumCoverPath();
+            Bitmap albumCoverPicture = pathToBitmapConverter.getAlbumCoverFromMusicFile(albumCoverPath);
+
+            changeAlbumCoverPicture(albumCoverPicture);
             initProgressBar(songDuration);
-
-            Animation fadeInAnimation = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_in_animation);
-            fadeInAnimation.setAnimationListener(setArtistTitleWithAnimation(song));
-
-            songTitleView.startAnimation(fadeInAnimation);
-            songArtistView.startAnimation(fadeInAnimation);
+            setNewSongDescriptionAnimation(song);
 
             if(!statePlaying) {
                 changePlayButtonStateToPause();
             }
 
+            setAllViewsTransparent();
+            blurBackgroundImage(albumCoverPicture);
 
-
-            tabs.setBackground(getResources().getDrawable(R.color.currentlyPlayingTabTransparency));
-            currentlyPlayingTab.setBackground(getResources().getDrawable(R.color.currentlyPlayingTabTransparency));
-            toolbar.setBackground(getResources().getDrawable(R.drawable.toolbar_gradient_background));
-
-            appBar.setBackground(getResources().getDrawable(R.color.transparent));
-            container.setBackground(getResources().getDrawable(R.color.viewPagerTransparency));
-
-            Bitmap background = getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
-            blurImageView.setImageBitmap(background);
-            blurImageView.setBlur(15);
-
-            mSectionsPagerAdapter.setIconColor(albumCoverColor);
-
-            int pos = tabLayout.getSelectedTabPosition();
-
-
-            //TODO CLEAN UP THIS DAMN MESS, DUPLICATE CODE ( ALSO IN SECTIONPAGER ADAPTER ) 
-            switch(pos) {
-                case 0:
-                    ImageView songTabView = (ImageView) tabLayout.getTabAt(pos).getCustomView();
-                    VectorChildFinder vector = new VectorChildFinder(context, R.drawable.ic_song_tab_icon_unfocused, songTabView);
-                    VectorDrawableCompat.VFullPath path = vector.findPathByName("song_tab_icon_unfocused_path");
-                    path.setFillColor(albumCoverColor);
-                    path.setStrokeColor(albumCoverColor);
-                    break;
-                case 1:
-                    ImageView albumTabView = (ImageView) tabLayout.getTabAt(pos).getCustomView();
-                    VectorChildFinder vector1 = new VectorChildFinder(context, R.drawable.ic_album_tab_icon_unfocused, albumTabView);
-                    VectorDrawableCompat.VFullPath path1 = vector1.findPathByName("album_tab_icon_unfocused_path");
-                    path1.setFillColor(albumCoverColor);
-                    path1.setStrokeColor(albumCoverColor);
-                    break;
-                case 2:
-                    ImageView playlistTabView = (ImageView) tabLayout.getTabAt(pos).getCustomView();
-
-                    VectorChildFinder vector2 = new VectorChildFinder(context, R.drawable.ic_playlist_tab_icon_unfocused, playlistTabView);
-                    VectorDrawableCompat.VFullPath path2 = vector2.findPathByName("playlist_tab_icon_unfocused_left_path");
-                    path2.setFillColor(albumCoverColor);
-                    path2.setStrokeColor(albumCoverColor);
-
-                    VectorDrawableCompat.VFullPath path3 = vector2.findPathByName("playlist_tab_icon_unfocused_right_path");
-                    path3.setFillColor(albumCoverColor);
-                    path3.setStrokeColor(albumCoverColor);
-                    break;
-
-            }
+            changeSelectedTabIconColor(albumCoverColor);
 
         }
 
+        private void setNewSongDescriptionAnimation(Song song){
+            Animation fadeInAnimation = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_in_animation);
+            fadeInAnimation.setAnimationListener(setArtistTitleWithAnimation(song));
+
+            songTitleView.startAnimation(fadeInAnimation);
+            songArtistView.startAnimation(fadeInAnimation);
+        }
+
+        private void changeSelectedTabIconColor(int albumCoverColor){
+            int pos = tabLayout.getSelectedTabPosition();
+            TabLayout.Tab selectedTab = tabLayout.getTabAt(pos);
+
+            mSectionsPagerAdapter.setIconColor(albumCoverColor);
+            mSectionsPagerAdapter.changeTabToSelected(selectedTab, pos);
+        }
 
         private void initProgressBar(Long songDuration){
             audioProgressBar.setProgress(0);

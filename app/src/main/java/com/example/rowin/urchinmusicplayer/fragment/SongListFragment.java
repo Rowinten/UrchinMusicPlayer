@@ -23,6 +23,7 @@ import com.example.rowin.urchinmusicplayer.activity.MainActivity;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.util.AudioRequests;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public class SongListFragment extends Fragment{
         changeHighlightedTabReceiver = new ChangeHighlightedTabReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(MainActivity.BROADCAST_ACTION);
+        intentFilter.addAction(AudioRequests.BROADCAST_ACTION);
         getActivity().registerReceiver(changeHighlightedTabReceiver, intentFilter);
     }
 
