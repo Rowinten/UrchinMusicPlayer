@@ -119,15 +119,18 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
     private String convertToDuration(Long songDuration){
+        String secondsBelowZero = "";
         long seconds = songDuration/1000;
         long minutes = seconds / 60;
         seconds = seconds % 60;
 
+
+
         if(seconds < 10){
-            seconds = Long.valueOf("0" + seconds);
-            Log.v("d", String.valueOf(seconds));
+            secondsBelowZero = "0" + seconds;
+            return minutes +":"+ secondsBelowZero;
         }
 
-        return minutes +":"+seconds;
+        return minutes +":"+ seconds;
     }
 }

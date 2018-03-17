@@ -2,6 +2,7 @@ package com.example.rowin.urchinmusicplayer.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -26,10 +27,14 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     private Context context;
     private int iconColor;
 
-    public SectionsPagerAdapter(FragmentManager fm, Context context) {
+    private int colorAccent;
+
+    public SectionsPagerAdapter(FragmentManager fm, Context context, int colorAccent) {
         super(fm);
         this.context = context;
         iconColor = context.getResources().getColor(R.color.colorAccent);
+
+        this.colorAccent = colorAccent;
     }
 
     //Creates the layout for all the tabs
@@ -142,7 +147,12 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-                return new SongListFragment();
+                SongListFragment songListFragment = new SongListFragment();
+                Bundle bundle = new Bundle();
+                bundle.putInt("colorAccent", colorAccent);
+                songListFragment.setArguments(bundle);
+
+                return songListFragment;
             case 1:
                 return new AlbumFragment();
             case 2:

@@ -449,7 +449,12 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             if (Objects.equals(skipType, "NEXT")) {
                 newSongIndex = songIndex + 1;
             } else if (Objects.equals(skipType, "PREVIOUS")) {
-                newSongIndex = songIndex - 1;
+                if(mediaPlayer != null && mediaPlayer.getCurrentPosition() > 5000){
+                    mediaPlayer.seekTo(0);
+                    return;
+                } else {
+                    newSongIndex = songIndex - 1;
+                }
             }
 
             if (newSongIndex != -1 && newSongIndex < listOfSongs.size()) {

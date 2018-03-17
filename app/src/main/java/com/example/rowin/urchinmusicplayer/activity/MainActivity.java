@@ -23,6 +23,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     private MediaPlayerService playerService;
     private SongBroadCastReceiver songBroadCastReceiver;
     private AudioProgressBroadcastReceiver audioProgressBroadcastReceiver;
+    private MusicStorage musicStorage;
 
     public ProgressBar audioProgressBar;
     public ImageView playButton, nextSongButton, previousSongButton, backAlbumCoverView, frontAlbumCoverView;
@@ -95,6 +97,31 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
         toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
         tabs.setPadding(0,0,0, getNavigationBarHeight());
+
+
+
+
+
+        ColorReader colorReader = new ColorReader();
+        if(musicStorage.loadAudio() != null){
+            Song lastPlayedSong = musicStorage.getLastPlayedSong();
+            Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
+            initializeSongTab(lastPlayedSong);
+            playAudio(musicStorage.loadAudioIndex());
+
+            setAllViewsTransparent();
+            blurBackgroundImage(albumCover);
+
+            int dominantColor = colorReader.getDominantColor(albumCover);
+            int complimentedDominantColor = colorReader.getComplimentedColor(dominantColor);
+
+            setAdapterForViewPager(complimentedDominantColor);
+            mSectionsPagerAdapter.setIconColor(complimentedDominantColor);
+            mSectionsPagerAdapter.changeTabToSelected(tabLayout.getTabAt(0), 0);
+        } else {
+            setAdapterForViewPager(getResources().getColor(R.color.colorAccent));
+        }
+
 
 
 
@@ -139,32 +166,8 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission granted and now can proceed
                     SongManager manager = new SongManager(this);
-                    MusicStorage musicStorage = new MusicStorage(this);
-                    ColorReader colorReader = new ColorReader();
                     musicStorage.storeAudio(manager.getSongsFromMusicDirectory());
 
-
-                    setAdapterForViewPager();
-
-
-                    //TODO CLEAN UP
-
-                    if(musicStorage.getLastPlayedSong() != null){
-                        Song lastPlayedSong = musicStorage.getLastPlayedSong();
-                        Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
-                        initializeSongTab(lastPlayedSong);
-                        playAudio(musicStorage.loadAudioIndex());
-
-                        setAllViewsTransparent();
-                        blurBackgroundImage(albumCover);
-
-                        int dominantColor = colorReader.getDominantColor(albumCover);
-                        int complimentedDominantColor = colorReader.getComplimentedColor(dominantColor);
-
-
-                        mSectionsPagerAdapter.setIconColor(complimentedDominantColor);
-                        mSectionsPagerAdapter.changeTabToSelected(tabLayout.getTabAt(0), 0);
-                    }
                 } else {
                     //TODO Add function to close application if permission is denied
                     // permission denied
@@ -201,8 +204,8 @@ public class MainActivity extends AppCompatActivity {
     private void initializeClasses(){
         animations = new Animations(this);
         pathToBitmapConverter = new PathToBitmapConverter();
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this);
         audioRequests = new AudioRequests(this);
+        musicStorage = new MusicStorage(this);
     }
 
     private void initializeSongTab(Song song){
@@ -328,7 +331,8 @@ public class MainActivity extends AppCompatActivity {
         statePlaying = false;
     }
 
-    private void setAdapterForViewPager(){
+    private void setAdapterForViewPager(int colorAccent){
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this, colorAccent);
         ViewPager mViewPager = findViewById(R.id.container);
 
         mViewPager.setAdapter(mSectionsPagerAdapter);

@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
@@ -38,6 +40,8 @@ public class SongListFragment extends Fragment{
 
     private RecyclerView songListRecyclerView;
     private RecyclerViewAdapter recyclerViewAdapter;
+    private EditText searchSongEditText;
+
 
     public SongListFragment(){
 
@@ -49,6 +53,10 @@ public class SongListFragment extends Fragment{
         View view =  inflater.inflate(R.layout.songs_tab_fragment, container, false);
         initializeViews(view);
 
+        Bundle bundle = getArguments();
+        int colorAccent = bundle.getInt("colorAccent");
+
+
         MusicStorage musicStorage = new MusicStorage(getContext());
         ArrayList<Song> listOfSongs = musicStorage.loadAudio();
 
@@ -56,7 +64,15 @@ public class SongListFragment extends Fragment{
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
         songListRecyclerView.setLayoutManager(layoutManager);
 
-        recyclerViewAdapter.setSelected(musicStorage.loadAudioIndex());
+
+        if(musicStorage.loadAudioIndex() != null) {
+            searchSongEditText.getBackground().setColorFilter(colorAccent, PorterDuff.Mode.SRC_IN);
+            recyclerViewAdapter.setTextColor(colorAccent);
+            recyclerViewAdapter.setSelected(musicStorage.loadAudioIndex());
+            songListRecyclerView.scrollToPosition(musicStorage.loadAudioIndex());
+        }
+
+
 
         return view;
     }
@@ -77,6 +93,7 @@ public class SongListFragment extends Fragment{
 
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
+        searchSongEditText = view.findViewById(R.id.search_song_edit_text);
     }
 
     private void registerChangeHighlightedTabReceiver(){
@@ -116,6 +133,8 @@ public class SongListFragment extends Fragment{
             int color = intent.getIntExtra("albumCoverColor", 0);
 
             changeSelectedTab(newPosition, color);
+            searchSongEditText.getBackground().setColorFilter(color, PorterDuff.Mode.SRC_IN);
+
 
             songListRecyclerView.scrollToPosition(newPosition);
 

@@ -49,7 +49,7 @@ public class MusicStorage {
         editor.apply();
     }
 
-    public int loadAudioIndex(){
+    public Integer loadAudioIndex(){
         sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         return sharedPreferences.getInt("audioIndex", -1);//return -1 if no data found
     }
