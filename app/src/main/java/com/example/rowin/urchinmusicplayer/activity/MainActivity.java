@@ -23,7 +23,6 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -42,12 +41,17 @@ import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
 import com.jgabrielfreitas.core.BlurImageView;
 
+import java.util.ArrayList;
+
 
 public class MainActivity extends AppCompatActivity {
 
     private Boolean serviceBound = false;
     private Boolean isAlbumBackVisible = false;
     private Boolean statePlaying = false;
+
+    public Song lastPlayedSong = null;
+    public Integer lastPlayedSongIndex = null;
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private PathToBitmapConverter pathToBitmapConverter;
@@ -69,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private ViewPager container;
     private TabLayout tabs;
-    private ConstraintLayout currentlyPlayingTab;
+    public ConstraintLayout currentlyPlayingTab;
     private AppBarLayout appBar;
     private BlurImageView blurImageView;
     private TabLayout tabLayout;
@@ -82,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
         createServiceConnection();
         initializeViews();
         initializeClasses();
-        //songTitleView.setSelected(true);
 
         //Requests permission to read external storage for music files
         ActivityCompat.requestPermissions(MainActivity.this,
@@ -97,33 +100,6 @@ public class MainActivity extends AppCompatActivity {
         toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
         toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
         tabs.setPadding(0,0,0, getNavigationBarHeight());
-
-
-
-
-
-        ColorReader colorReader = new ColorReader();
-        if(musicStorage.loadAudio() != null){
-            Song lastPlayedSong = musicStorage.getLastPlayedSong();
-            Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
-            initializeSongTab(lastPlayedSong);
-            playAudio(musicStorage.loadAudioIndex());
-
-            setAllViewsTransparent();
-            blurBackgroundImage(albumCover);
-
-            int dominantColor = colorReader.getDominantColor(albumCover);
-            int complimentedDominantColor = colorReader.getComplimentedColor(dominantColor);
-
-            setAdapterForViewPager(complimentedDominantColor);
-            mSectionsPagerAdapter.setIconColor(complimentedDominantColor);
-            mSectionsPagerAdapter.changeTabToSelected(tabLayout.getTabAt(0), 0);
-        } else {
-            setAdapterForViewPager(getResources().getColor(R.color.colorAccent));
-        }
-
-
-
 
         registerSongBroadcastReceiver();
         registerAudioProgressBroadcastReceiver();
@@ -165,8 +141,31 @@ public class MainActivity extends AppCompatActivity {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission granted and now can proceed
+
                     SongManager manager = new SongManager(this);
-                    musicStorage.storeAudio(manager.getSongsFromMusicDirectory());
+                    ArrayList<Song> listOfSongs = manager.getSongsFromMusicDirectory();
+                    musicStorage.storeAudio(listOfSongs);
+
+                    ColorReader colorReader = new ColorReader();
+                    lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex();
+                    if(lastPlayedSongIndex != null){
+                        lastPlayedSong = listOfSongs.get(lastPlayedSongIndex);
+                        Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
+                        initializeSongTab(lastPlayedSong);
+                        playAudio(lastPlayedSongIndex);
+
+                        setAllViewsTransparent();
+                        blurBackgroundImage(albumCover);
+
+                        int dominantColor = colorReader.getDominantColor(albumCover);
+                        int complimentedDominantColor = colorReader.getComplimentedColor(dominantColor);
+
+                        setAdapterForViewPager(complimentedDominantColor);
+                        mSectionsPagerAdapter.setIconColor(complimentedDominantColor);
+                        mSectionsPagerAdapter.changeTabToSelected(tabLayout.getTabAt(0), 0);
+                    } else {
+                        setAdapterForViewPager(getResources().getColor(R.color.colorAccent));
+                    }
 
                 } else {
                     //TODO Add function to close application if permission is denied
@@ -245,7 +244,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private int getStatusBarHeight() {
+    public int getStatusBarHeight() {
         int result = 0;
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
@@ -254,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private int getNavigationBarHeight(){
+    public int getNavigationBarHeight(){
         int result = 0;
         int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
         if (resourceId > 0) {

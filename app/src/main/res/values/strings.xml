@@ -6,4 +6,9 @@
     <string name="tab_text_1">Songs</string>
     <string name="tab_text_2">Albums</string>
     <string name="tab_text_3">Playlists</string>
+
+    <string name="sortingText">Sort on</string>
+    <string name="sort_on_name">Name</string>
+    <string name="sort_on_artist">Artist</string>
+    <string name="sort_on_duration">Duration</string>
 </resources>

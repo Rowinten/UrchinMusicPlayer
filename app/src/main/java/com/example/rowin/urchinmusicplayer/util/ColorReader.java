@@ -61,9 +61,9 @@ public class ColorReader {
 
         //Checks if luminance = lower than 40 ( too dark ) or higher than 220 ( too light )
         if(luma < 40 || luma > 220){
-            red = 51;
-            green = 102;
-            blue = 255;
+            red = 73;
+            green = 172;
+            blue = 213;
         } else {
             //Adds value to the dominant value of a color, making it pop out more.
             if (red > blue && red > green && red + 60 < 255) {

@@ -97,33 +97,22 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         switch(index){
             case 0:
                 ImageView songTabView = (ImageView) tab.getCustomView();
-                //songTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_focused));
-
                 VectorChildFinder vector = new VectorChildFinder(context, R.drawable.ic_song_tab_icon_unfocused, songTabView);
                 VectorDrawableCompat.VFullPath path = vector.findPathByName("song_tab_icon_unfocused_path");
                 path.setFillColor(iconColor);
                 path.setStrokeColor(iconColor);
-
-//                TextView songTabView = (TextView) tab.getCustomView();
-//                songTabView.setTextColor(context.getResources().getColor(R.color.tabTextColorSelected));
-//                songTabView.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_song_tab_icon_focused, 0 , 0);
                 break;
             case 1:
                 ImageView albumTabView = (ImageView) tab.getCustomView();
-                //songTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_focused));
 
                 VectorChildFinder vector1 = new VectorChildFinder(context, R.drawable.ic_album_tab_icon_unfocused, albumTabView);
                 VectorDrawableCompat.VFullPath path1 = vector1.findPathByName("album_tab_icon_unfocused_path");
                 path1.setFillColor(iconColor);
                 path1.setStrokeColor(iconColor);
 
-//                TextView albumTabView = (TextView) tab.getCustomView();
-//                albumTabView.setTextColor(context.getResources().getColor(R.color.tabTextColorSelected));
-//                albumTabView.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_album_tab_icon_focused, 0 , 0);
                 break;
             case 2:
                 ImageView playlistTabView = (ImageView) tab.getCustomView();
-                //songTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_focused));
 
                 VectorChildFinder vector2 = new VectorChildFinder(context, R.drawable.ic_playlist_tab_icon_unfocused, playlistTabView);
                 VectorDrawableCompat.VFullPath path2 = vector2.findPathByName("playlist_tab_icon_unfocused_left_path");
@@ -133,10 +122,6 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
                 VectorDrawableCompat.VFullPath path3 = vector2.findPathByName("playlist_tab_icon_unfocused_right_path");
                 path3.setFillColor(iconColor);
                 path3.setStrokeColor(iconColor);
-
-//                TextView playlistTabView = (TextView) tab.getCustomView();
-//                playlistTabView.setTextColor(context.getResources().getColor(R.color.tabTextColorSelected));
-//                playlistTabView.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_playlist_tab_icon_focused, 0 , 0);
                 break;
         }
     }

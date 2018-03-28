@@ -26,6 +26,7 @@ import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -421,13 +422,31 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             //If broadcast receives index for new song, stop media that is currently playing
             stopMedia();
 
+            //Checks if the audioList has changed due to a filter being applied.
+            if(!areArraysIdentical(listOfSongs, musicStorage.loadAudio())){
+                listOfSongs = musicStorage.loadAudio();
+            }
+
             songIndex = intent.getIntExtra("songIndex", 0);
             Song song = listOfSongs.get(songIndex);
             mediaFile = song.getSongPath();
             musicStorage.storeAudioIndex(songIndex);
 
+            musicStorage.storeAudioName(song.getSongName());
+
             initAndPrepareMediaPlayer();
             sendSongToActivity(song);
+        }
+
+        private Boolean areArraysIdentical(ArrayList<Song> array1, ArrayList<Song> array2){
+            for(Song song: array1){
+                for(Song song2: array2){
+                    if(!song.equals(song2)){
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
     }
 

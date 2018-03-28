@@ -3,6 +3,7 @@ package com.example.rowin.urchinmusicplayer.model;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import java.util.ArrayList;
 
@@ -10,7 +11,7 @@ import java.util.ArrayList;
  * Created by Rowin on 2/23/2018.
  */
 
-public class Song implements Parcelable {
+public class Song implements Parcelable{
 
     private String songPath;
     private String songName;
@@ -106,4 +107,5 @@ public class Song implements Parcelable {
     public void setAlbumCoverPath(String albumCoverPath) {
         this.albumCoverPath = albumCoverPath;
     }
+
 }
