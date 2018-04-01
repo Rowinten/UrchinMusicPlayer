@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical">
 
     <include layout="@layout/fitler_bar_view"/>
@@ -15,6 +16,17 @@
         android:paddingTop="48dp"
         android:clipToPadding="false"
         />
+
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/fab_shuffle_button"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|end"
+        android:backgroundTint="@android:color/black"
+        android:background="@drawable/shape_circle"
+        android:src="@drawable/ic_shuffle_white_24px"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp" />
 
 
 </FrameLayout>

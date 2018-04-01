@@ -16,6 +16,7 @@ public class AudioRequests {
     public static final String AUDIO_PROGRESS = "com.example.rowin.urchinmusicplayer.AudioProgress";
     public static final String SKIP_SONG = "com.example.rowin.urchinmusicplayer.SkipSong";
     public static final String CHANGE_MEDIA_STATE = "com.example.rowin.urchinmusicplayer.PlayPause";
+    public static final String SHUFFLE_AUDIO = "com.example.rowin.urchinmusicplayer.ShuffleAudio";
 
     public static final String SKIP_TO_NEXT = "com.example.rowin.urchinmusicplayer.NextSong";
     public static final String SKIP_TO_PREVIOUS = "com.example.rowin.urchinmusicplayer.PreviousSong";
@@ -44,6 +45,12 @@ public class AudioRequests {
         broadCastIntent.setAction(PLAY_NEW_AUDIO);
         broadCastIntent.putExtra("songIndex", index);
         context.sendBroadcast(broadCastIntent);
+    }
+
+    public void sendShuffleRequest(){
+        Intent shuffleIntent = new Intent();
+        shuffleIntent.setAction(SHUFFLE_AUDIO);
+        context.sendBroadcast(shuffleIntent);
     }
 
 }

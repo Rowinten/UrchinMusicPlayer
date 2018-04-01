@@ -1,18 +1,15 @@
 package com.example.rowin.urchinmusicplayer.model;
 
-import android.app.Activity;
-import android.app.Application;
+import android.support.v7.widget.RecyclerView;
 import android.widget.EditText;
-
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
-import com.example.rowin.urchinmusicplayer.util.SortingOptions;
 
 /**
  * Created by Rowin on 3/26/2018.
  */
 
 public class Globals {
-    private RecyclerViewAdapter recyclerViewAdapter;
+    private RecyclerView recyclerView;
     private EditText searchSongEditText;
 
     private static final Globals ourInstance = new Globals();
@@ -24,8 +21,8 @@ public class Globals {
     private Globals() {
     }
 
-    public void initRecyclerViewAdapter(RecyclerViewAdapter recyclerViewAdapter){
-        this.recyclerViewAdapter = recyclerViewAdapter;
+    public void initRecyclerView(RecyclerView recyclerView){
+        this.recyclerView = recyclerView;
     }
 
     public void setSearchSongEditText(EditText searchSongEditText){
@@ -36,8 +33,7 @@ public class Globals {
         return searchSongEditText;
     }
 
-    public RecyclerViewAdapter getRecyclerViewAdapter(){
-        return recyclerViewAdapter;
-    }
+
+    public RecyclerView getRecyclerView(){return recyclerView;}
 
 }

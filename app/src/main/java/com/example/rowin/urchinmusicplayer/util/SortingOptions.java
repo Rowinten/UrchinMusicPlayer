@@ -1,9 +1,11 @@
 package com.example.rowin.urchinmusicplayer.util;
 
 import android.content.Context;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 
+import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
 import com.example.rowin.urchinmusicplayer.model.Globals;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
@@ -18,19 +20,17 @@ import java.util.Comparator;
  */
 
 public class SortingOptions {
-    public static final String SORTED_NAME_A_Z = "com.example.rowin.urchinmusicplayer.SORTNAMEAZ";
-    public static final String SORTED_NAME_Z_A = "com.example.rowin.urchinmusicplayer.SORTNAMEZA";
-    public static final String SORTED_DURATION_0_9 = "com.example.rowin.urchinmusicplayer.SORTDURATION09";
-    public static final String SORTED_DURATION_9_0 = "com.example.rowin.urchinmusicplayer.SORTDURATION90";
-    public static final String SORTED_ARTIST_A_Z = "com.example.rowin.urchinmusicplayer.SORTARTISTAZ";
-    public static final String SORTED_ARTIST_Z_A = "com.example.rowin.urchinmusicplayer.SORTARTISTZA";
+    static final String SORTED_NAME_A_Z = "com.example.rowin.urchinmusicplayer.SORTNAMEAZ";
+    static final String SORTED_NAME_Z_A = "com.example.rowin.urchinmusicplayer.SORTNAMEZA";
+    static final String SORTED_DURATION_0_9 = "com.example.rowin.urchinmusicplayer.SORTDURATION09";
+    static final String SORTED_DURATION_9_0 = "com.example.rowin.urchinmusicplayer.SORTDURATION90";
+    static final String SORTED_ARTIST_A_Z = "com.example.rowin.urchinmusicplayer.SORTARTISTAZ";
+    static final String SORTED_ARTIST_Z_A = "com.example.rowin.urchinmusicplayer.SORTARTISTZA";
 
     private ArrayList<Song> listOfSongs;
     private ArrayList<Song> backUpListOfSongs = new ArrayList<>();
-    private RecyclerViewAdapter recyclerViewAdapter;
 
-    public SortingOptions(Context context){
-        this.recyclerViewAdapter = Globals.getInstance().getRecyclerViewAdapter();
+    SortingOptions(Context context){
         MusicStorage musicStorage = new MusicStorage(context);
         listOfSongs = musicStorage.loadAudio();
         backUpListOfSongs.addAll(listOfSongs);
@@ -72,7 +72,7 @@ public class SortingOptions {
         return listOfSongs;
     }
 
-    ArrayList<Song> getSortedListZtoA(ArrayList<Song> listOfSongs){
+    ArrayList<Song> reverseList(ArrayList<Song> listOfSongs){
         Collections.reverse(listOfSongs);
         return listOfSongs;
     }
@@ -81,16 +81,15 @@ public class SortingOptions {
         listOfSongs.clear();
         if (textInput.isEmpty()) {
             listOfSongs.addAll(backUpListOfSongs);
-            recyclerViewAdapter.changeDataSet(listOfSongs);
             return listOfSongs;
         } else {
             for (Song song : backUpListOfSongs) {
                 if (song.getSongName().toLowerCase().contains(textInput)) {
                     listOfSongs.add(song);
-                    recyclerViewAdapter.changeDataSet(listOfSongs);
                 }
             }
             return listOfSongs;
         }
     }
+
 }

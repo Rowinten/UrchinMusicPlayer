@@ -5,9 +5,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.ColorStateList;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.widget.AppCompatImageButton;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -22,6 +25,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import com.example.rowin.urchinmusicplayer.R;
@@ -35,6 +39,7 @@ import com.example.rowin.urchinmusicplayer.util.SortingOptionDialogMenu;
 import com.example.rowin.urchinmusicplayer.util.HidingScrollListener;
 import com.example.rowin.urchinmusicplayer.util.SortingOptions;
 import com.example.rowin.urchinmusicplayer.util.TextWatcherSorter;
+import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 
 import java.util.ArrayList;
 
@@ -52,10 +57,11 @@ public class SongListFragment extends Fragment{
     private CardView filterBarView;
     private EditText searchSongEditText;
     private ImageView filterButton;
-
-    private ArrayList<Song> listOfSongs;
+    private AppCompatImageButton fab;
 
     private MusicStorage musicStorage;
+    private WindowUtils windowUtils;
+    private AudioRequests audioRequests;
 
     public SongListFragment(){
 
@@ -69,24 +75,14 @@ public class SongListFragment extends Fragment{
 
         initializeViews(view);
         initializeClasses();
-        //filterEditTextClickListener();
-
-        Bundle bundle = getArguments();
-        int colorAccent = bundle.getInt("colorAccent");
-
-        listOfSongs = musicStorage.loadAudio();
-        Integer lastPlayedSongIndex = ((MainActivity) getActivity()).lastPlayedSongIndex;
-
         initializeRecyclerView();
+        registerShuffleButtonClickListener();
 
-        searchSongEditText.addTextChangedListener(new TextWatcherSorter(getContext()));
+        //filterEditTextClickListener();
         initializeFilterMenu();
-
-        if(lastPlayedSongIndex != null) {
-            recyclerViewAdapter.setTextColor(colorAccent);
-            recyclerViewAdapter.setSelected(lastPlayedSongIndex);
-            songListRecyclerView.scrollToPosition(lastPlayedSongIndex +1);
-        }
+        TextWatcherSorter textWatcherSorter = new TextWatcherSorter(getContext(), songListRecyclerView);
+        textWatcherSorter.setCurrentHighlightedSong(musicStorage.loadAudio().get(musicStorage.loadAudioIndex()));
+        searchSongEditText.addTextChangedListener(textWatcherSorter);
 
         return view;
     }
@@ -105,11 +101,17 @@ public class SongListFragment extends Fragment{
         getActivity().unregisterReceiver(changeHighlightedTabReceiver);
     }
 
+    private int getColorFromBundle(){
+        Bundle bundle = getArguments();
+        return bundle.getInt("colorAccent");
+    }
+
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
         searchSongEditText = view.findViewById(R.id.search_song_view);
         filterBarView = view.findViewById(R.id.filter_bar_view);
         searchSongEditText = view.findViewById(R.id.search_song_view);
+        fab = view.findViewById(R.id.fab_shuffle_button);
 
         Globals.getInstance().setSearchSongEditText(searchSongEditText);
 
@@ -118,11 +120,15 @@ public class SongListFragment extends Fragment{
 
     private void initializeClasses(){
         musicStorage = new MusicStorage(getContext());
+        windowUtils = new WindowUtils(getContext());
+        audioRequests = new AudioRequests(getContext());
     }
 
     private void initializeRecyclerView(){
+        ArrayList<Song> listOfSongs = musicStorage.loadAudio();
         RecyclerViewAdapter recyclerViewAdapter = getRecyclerViewAdapter(listOfSongs);
-        Globals.getInstance().initRecyclerViewAdapter(recyclerViewAdapter);
+
+        Globals.getInstance().initRecyclerView(songListRecyclerView);
 
         songListRecyclerView.setAdapter(recyclerViewAdapter);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
@@ -130,23 +136,37 @@ public class SongListFragment extends Fragment{
         songListRecyclerView.addOnScrollListener(new HidingScrollListener() {
             @Override
             public void onHide() {
-                int marginTop = 32;
-                int totalHeight = filterBarView.getHeight() + marginTop;
+                int margin = 32;
+                int totalHeightSearchBar = filterBarView.getHeight() + margin;
+                int totalHeightFab = fab.getHeight() +margin;
+
                 Log.d("d", String.valueOf(filterBarView.getHeight()));
-                filterBarView.animate().translationY(-totalHeight).setInterpolator(new AccelerateInterpolator(2));
+                filterBarView.animate().translationY(-totalHeightSearchBar).setInterpolator(new AccelerateInterpolator(2));
+                fab.animate().translationY(totalHeightFab).setInterpolator(new AccelerateInterpolator(2));
             }
 
             @Override
             public void onShow() {
                 filterBarView.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
+                fab.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
             }
         });
+
+        //Checks if a song has been played in the last session of the user, and styles the recyclerView based on that song (color from album picture and scroll
+        //to the position of that song)
+        Integer lastPlayedSongIndex = ((MainActivity) getActivity()).lastPlayedSongIndex;
+        if(lastPlayedSongIndex != null) {
+            recyclerViewAdapter.setTextColor(getColorFromBundle());
+            recyclerViewAdapter.setSelected(lastPlayedSongIndex);
+            fab.setBackgroundTintList(ColorStateList.valueOf(getColorFromBundle()));
+            songListRecyclerView.scrollToPosition(lastPlayedSongIndex +1);
+        }
     }
 
     private void initializeFilterMenu(){
         MainActivity mainActivity = ((MainActivity) getActivity());
-        int positionY = mainActivity.getNavigationBarHeight() + filterBarView.getHeight() + mainActivity.currentlyPlayingTab.getHeight() + 24;
-        final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY, recyclerViewAdapter);
+        int positionY = windowUtils.getNavigationBarHeight() + filterBarView.getHeight() + mainActivity.currentlyPlayingTab.getHeight() + 24;
+        final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY);
 
         filterButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -160,6 +180,15 @@ public class SongListFragment extends Fragment{
         });
     }
 
+    private void registerShuffleButtonClickListener(){
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                audioRequests.sendShuffleRequest();
+            }
+        });
+    }
+
     private void registerChangeHighlightedTabReceiver(){
         changeHighlightedTabReceiver = new ChangeHighlightedTabReceiver();
 
@@ -168,29 +197,18 @@ public class SongListFragment extends Fragment{
         getActivity().registerReceiver(changeHighlightedTabReceiver, intentFilter);
     }
 
-
     private RecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
         recyclerViewAdapter =  new RecyclerViewAdapter(getContext(), listOfSongs, new RecyclerViewAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(int position, Song song) {
-                int index = position;
-                ((MainActivity) getActivity()).playAudio(index);
+                ((MainActivity) getActivity()).playAudio(position);
 //                searchSongEditText.setCursorVisible(false);
-                hideSoftKeyboard();
+                windowUtils.hideSoftKeyboard(getActivity().getCurrentFocus());
 
             }
         });
 
         return recyclerViewAdapter;
-    }
-
-    private void hideSoftKeyboard(){
-        View view = getActivity().getCurrentFocus();
-
-        if(view != null) {
-            InputMethodManager inputMethodManager = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
-        }
     }
 
     private void changeSelectedTab(int position, int color){
@@ -217,6 +235,7 @@ public class SongListFragment extends Fragment{
             int color = intent.getIntExtra("albumCoverColor", 0);
 
             changeSelectedTab(newPosition, color);
+            fab.setBackgroundTintList(ColorStateList.valueOf(color));
             songListRecyclerView.scrollToPosition(newPosition);
 
         }

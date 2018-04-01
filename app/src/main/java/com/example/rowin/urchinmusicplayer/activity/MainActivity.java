@@ -39,6 +39,7 @@ import com.example.rowin.urchinmusicplayer.util.AudioRequests;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
 import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
+import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 import com.jgabrielfreitas.core.BlurImageView;
 
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
     private SongBroadCastReceiver songBroadCastReceiver;
     private AudioProgressBroadcastReceiver audioProgressBroadcastReceiver;
     private MusicStorage musicStorage;
+    private WindowUtils windowUtils;
 
     public ProgressBar audioProgressBar;
     public ImageView playButton, nextSongButton, previousSongButton, backAlbumCoverView, frontAlbumCoverView;
@@ -91,15 +93,7 @@ public class MainActivity extends AppCompatActivity {
         ActivityCompat.requestPermissions(MainActivity.this,
                 new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},1);
 
-
-        //TODO window code own method;
-
-        Window window = getWindow();
-        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-
-        toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
-        toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
-        tabs.setPadding(0,0,0, getNavigationBarHeight());
+        windowUtils.setWindowMetrics(getWindow(), toolbar, tabs);
 
         registerSongBroadcastReceiver();
         registerAudioProgressBroadcastReceiver();
@@ -205,6 +199,7 @@ public class MainActivity extends AppCompatActivity {
         pathToBitmapConverter = new PathToBitmapConverter();
         audioRequests = new AudioRequests(this);
         musicStorage = new MusicStorage(this);
+        windowUtils = new WindowUtils(this);
     }
 
     private void initializeSongTab(Song song){
@@ -243,24 +238,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
-    public int getStatusBarHeight() {
-        int result = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
-    public int getNavigationBarHeight(){
-        int result = 0;
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
 
     //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
     //when clicked an animation plays that flips over to the opposite ImageView and displays the album cover of the newly clicked song
