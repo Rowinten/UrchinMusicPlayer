@@ -140,8 +140,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         stopMedia();
-
-        if(isShuffled){
+        Log.d("ppp", "init");
+        if(isShuffled && !shuffledSongList.isEmpty()){
             shuffleToNextMedia();
         } else {
 
@@ -369,10 +369,10 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     private void shuffleToNextMedia(){
-        //Checks if shuffledSongList is Empty, everytime a song gets picked it gets removed from the shuffledSongList. That way a song cannot get selected twice,
+        //Checks if shuffledSongList is Empty, every time a song gets picked it gets removed from the shuffledSongList. That way a song cannot get selected twice,
         //and will shuffle through all the songs in random order.
-        if(!shuffledSongList.isEmpty()){
             mediaPlayer.stop();
+            mediaPlayer.release();
 
             int index = new Random().nextInt(shuffledSongList.size());
             Song shufflePickedSong = shuffledSongList.get(index);
@@ -380,14 +380,13 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
             //Gets the position of song in the main list, listOfSongs, this list does not change and is needed because played audio is based off of that list.
             //Otherwise wrong audio gets played due to wrong indexes (shuffledSongList is getting smaller and indexes get incorrect in comparison to main list in return )
-            int indexMainList = listOfSongs.indexOf(shufflePickedSong);
-            mediaFile = listOfSongs.get(indexMainList).getSongPath();
-            musicStorage.storeAudioIndex(indexMainList);
-            musicStorage.storeAudioName(listOfSongs.get(indexMainList).getSongName());
+            songIndex = listOfSongs.indexOf(shufflePickedSong);
+            mediaFile = listOfSongs.get(songIndex).getSongPath();
+            musicStorage.storeAudioIndex(songIndex);
+            musicStorage.storeAudioName(listOfSongs.get(songIndex).getSongName());
 
             initAndPrepareMediaPlayer();
-            sendSongToActivity(listOfSongs.get(indexMainList));
-        }
+            sendSongToActivity(listOfSongs.get(songIndex));
     }
 
     private void resetShuffledSongList(ArrayList<Song> newListOfSongs){
@@ -516,7 +515,13 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         @Override
         public void onReceive(Context context, Intent intent) {
             if(isShuffled){
-                shuffleToNextMedia();
+                //if user clicks next button but all songs in list have been shuffled and played
+                //already, then refill shuffledSongList and shuffle and play again
+                if(!shuffledSongList.isEmpty()) {
+                    shuffleToNextMedia();
+                } else {
+                    shuffledSongList.addAll(listOfSongs);
+                }
             } else {
                 String skipType = intent.getStringExtra("skipType");
                 if (Objects.equals(skipType, AudioRequests.SKIP_TO_NEXT)) {

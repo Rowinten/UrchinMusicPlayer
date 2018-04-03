@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/currentlyPlayingTabTransparency">
+
+    <android.support.v4.widget.CircleImageView
+        android:id="@+id/album_image_song_view"
+        android:layout_width="217dp"
+        android:layout_height="220dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="84dp"
+        android:src="@drawable/album_icon"
+        app:civ_border_color="#FF000000"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.503"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageView
+        android:id="@+id/pause_play_button_song_view"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_marginBottom="64dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/pause_to_play_animator" />
+
+    <ImageView
+        android:id="@+id/next_song_button_song_view"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_marginBottom="64dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/repeat_button_song_view"
+        app:layout_constraintStart_toEndOf="@+id/pause_play_button_song_view"
+        app:srcCompat="@drawable/next_song_button_animator" />
+
+    <ImageView
+        android:id="@+id/previous_button_song_view"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_marginBottom="64dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:rotation="180"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/pause_play_button_song_view"
+        app:layout_constraintHorizontal_bias="0.555"
+        app:layout_constraintStart_toEndOf="@+id/shuffle_button_song_view"
+        app:srcCompat="@drawable/next_song_button_animator" />
+
+    <ImageView
+        android:id="@+id/shuffle_button_song_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="76dp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/album_icon" />
+
+    <ImageView
+        android:id="@+id/repeat_button_song_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="76dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/album_icon" />
+
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="311dp"
+        android:layout_height="22dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="48dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.508"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/album_image_song_view" />
+</android.support.constraint.ConstraintLayout>

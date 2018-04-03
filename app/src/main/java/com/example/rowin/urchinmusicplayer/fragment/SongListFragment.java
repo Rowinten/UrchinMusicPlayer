@@ -236,7 +236,7 @@ public class SongListFragment extends Fragment{
 
             changeSelectedTab(newPosition, color);
             fab.setBackgroundTintList(ColorStateList.valueOf(color));
-            songListRecyclerView.scrollToPosition(newPosition);
+            songListRecyclerView.smoothScrollToPosition(newPosition);
 
         }
     }
