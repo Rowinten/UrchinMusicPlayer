@@ -1,7 +1,10 @@
 package com.example.rowin.urchinmusicplayer.util;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -50,6 +53,19 @@ public class WindowUtils {
         toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
         toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
         tabs.setPadding(0,0,0, getNavigationBarHeight());
+    }
+
+    public void setWindowMetrics(Window window, AppBarLayout toolbar){
+        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+
+        toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
+        toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
+    }
+
+    public float convertDpToPx(int dp){
+        DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
+        float px = dp * (metrics.densityDpi / 160f);
+        return Math.round(px);
     }
 
 }

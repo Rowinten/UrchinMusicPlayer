@@ -1,14 +1,13 @@
 package com.example.rowin.urchinmusicplayer.activity;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.constraint.ConstraintLayout;
@@ -19,8 +18,6 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
@@ -31,11 +28,16 @@ import android.widget.Toast;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.adapter.SectionsPagerAdapter;
+import com.example.rowin.urchinmusicplayer.events.ChangeMediaStateEvent;
+import com.example.rowin.urchinmusicplayer.events.FadeInActivityEvent;
+import com.example.rowin.urchinmusicplayer.events.PlaySongEvent;
+import com.example.rowin.urchinmusicplayer.events.ProgressUpdateEvent;
+import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
+import com.example.rowin.urchinmusicplayer.events.SkipSongEvent;
 import com.example.rowin.urchinmusicplayer.model.MediaPlayerService;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.AudioRequests;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
 import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
@@ -44,8 +46,11 @@ import com.jgabrielfreitas.core.BlurImageView;
 
 import java.util.ArrayList;
 
+import de.greenrobot.event.EventBus;
+
 
 public class MainActivity extends AppCompatActivity {
+    public static final String FADE_IN = "com.example.rowin.urchinmusicplayer.FADEIN";
 
     private Boolean serviceBound = false;
     private Boolean isAlbumBackVisible = false;
@@ -56,12 +61,9 @@ public class MainActivity extends AppCompatActivity {
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private PathToBitmapConverter pathToBitmapConverter;
-    private AudioRequests audioRequests;
     private Animations animations;
     private ServiceConnection serviceConnection;
     private MediaPlayerService playerService;
-    private SongBroadCastReceiver songBroadCastReceiver;
-    private AudioProgressBroadcastReceiver audioProgressBroadcastReceiver;
     private MusicStorage musicStorage;
     private WindowUtils windowUtils;
 
@@ -80,6 +82,8 @@ public class MainActivity extends AppCompatActivity {
     private BlurImageView blurImageView;
     private TabLayout tabLayout;
 
+    private RelativeLayout viewHolder;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,12 +99,40 @@ public class MainActivity extends AppCompatActivity {
 
         windowUtils.setWindowMetrics(getWindow(), toolbar, tabs);
 
-        registerSongBroadcastReceiver();
-        registerAudioProgressBroadcastReceiver();
+
+        EventBus.getDefault().register(this);
 
         playButtonOnClick();
         nextSongButtonOnClick();
         previousButtonOnClick();
+
+        openSongActivity();
+    }
+
+    private void openSongActivity(){
+        currentlyPlayingTab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                ArrayList<Song> lisOfSongs = musicStorage.loadAudio();
+                Song currentSong = lisOfSongs.get(musicStorage.loadAudioIndex());
+                Intent songIntent = new Intent(MainActivity.this, SongActivity.class);
+                songIntent.putExtra("albumImagePath", currentSong.getAlbumCoverPath());
+                songIntent.putExtra("songName", currentSong.getSongName());
+                songIntent.putExtra("songArtist", currentSong.getArtist());
+                startActivity(songIntent);
+
+                fadeOutViews();
+            }
+        });
+    }
+
+    private void fadeOutViews(){
+        animations.fadeOutAnimation(viewHolder);
+    }
+
+    public void fadeInViews(){
+        animations.fadeInAnimation(viewHolder);
     }
 
     @Override
@@ -112,8 +144,7 @@ public class MainActivity extends AppCompatActivity {
             playerService.stopSelf();
         }
 
-        unregisterReceiver(songBroadCastReceiver);
-        unregisterReceiver(audioProgressBroadcastReceiver);
+        EventBus.getDefault().unregister(this);
     }
 
     @Override
@@ -170,6 +201,23 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void createServiceConnection(){
+        serviceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                MediaPlayerService.LocalBinder binder = (MediaPlayerService.LocalBinder) iBinder;
+                playerService = binder.getService();
+                serviceBound = true;
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {
+                serviceBound = false;
+            }
+        };
+    }
+
     private void initializeViews(){
         toolbar = findViewById(R.id.toolbar);
         container = findViewById(R.id.container);
@@ -177,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
         currentlyPlayingTab = findViewById(R.id.include_play_tab);
         appBar = findViewById(R.id.appbar);
         mainView = findViewById(R.id.main_view);
+        viewHolder = findViewById(R.id.view_holder_main_activity);
 
         blurImageView = findViewById(R.id.blur_image_view);
 
@@ -197,7 +246,6 @@ public class MainActivity extends AppCompatActivity {
     private void initializeClasses(){
         animations = new Animations(this);
         pathToBitmapConverter = new PathToBitmapConverter();
-        audioRequests = new AudioRequests(this);
         musicStorage = new MusicStorage(this);
         windowUtils = new WindowUtils(this);
     }
@@ -209,20 +257,9 @@ public class MainActivity extends AppCompatActivity {
         frontAlbumCoverView.setImageBitmap(albumCover);
     }
 
-    private void createServiceConnection(){
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                MediaPlayerService.LocalBinder binder = (MediaPlayerService.LocalBinder) iBinder;
-                playerService = binder.getService();
-                serviceBound = true;
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName componentName) {
-                serviceBound = false;
-            }
-        };
+    private void initializeProgressBar(int duration, int color){
+        audioProgressBar.setMax(duration);
+        audioProgressBar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
     }
 
     public void playAudio(int index){
@@ -234,15 +271,14 @@ public class MainActivity extends AppCompatActivity {
             startService(playerIntent);
             bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
         } else {
-            audioRequests.sendPlayNewSongRequest(index);
+            EventBus.getDefault().post(new PlaySongEvent(index));
         }
     }
 
-
-    //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
-    //when clicked an animation plays that flips over to the opposite ImageView and displays the album cover of the newly clicked song
-    //isAlbumBackVisible keeps record of which side is on the visible side.
     private void changeAlbumCoverPicture(Bitmap newAlbumCover){
+        //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
+        //when clicked an animation plays that flips over to the opposite ImageView and displays the album cover of the newly clicked song
+        //isAlbumBackVisible keeps record of which side is on the visible side.
         if(!isAlbumBackVisible){
             backAlbumCoverView.setImageBitmap(newAlbumCover);
             animations.backToFrontAnimation(backAlbumCoverLayout, frontAlbumCoverLayout);
@@ -259,13 +295,12 @@ public class MainActivity extends AppCompatActivity {
         blurImageView.setBlur(15);
     }
 
-
     private void nextSongButtonOnClick(){
         nextSongButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 animations.nextSongAnimation(nextSongButton);
-                audioRequests.sendSkipSongRequest(AudioRequests.SKIP_TO_NEXT);
+                EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_NEXT));
             }
         });
     }
@@ -275,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 animations.nextSongAnimation(previousSongButton);
-                audioRequests.sendSkipSongRequest(AudioRequests.SKIP_TO_PREVIOUS);
+                EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_PREVIOUS));
             }
         });
     }
@@ -292,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
                     changePlayButtonStateToPlay();
                 }
 
-                audioRequests.sendChangeMediaStateRequest();
+                EventBus.getDefault().post(new ChangeMediaStateEvent());
             }
         });
     }
@@ -345,7 +380,6 @@ public class MainActivity extends AppCompatActivity {
         container.setBackground(getResources().getDrawable(R.color.viewPagerTransparency));
     }
 
-
     private Animation.AnimationListener setArtistTitleWithAnimation(final Song song){
         return new Animation.AnimationListener() {
             @Override
@@ -375,75 +409,51 @@ public class MainActivity extends AppCompatActivity {
         };
     }
 
-    private void registerSongBroadcastReceiver(){
-        songBroadCastReceiver = new SongBroadCastReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(AudioRequests.BROADCAST_ACTION);
-        registerReceiver(songBroadCastReceiver, intentFilter);
+    private void setNewSongDescriptionAnimation(Song song){
+        Animation fadeInAnimation = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_in_animation);
+        fadeInAnimation.setAnimationListener(setArtistTitleWithAnimation(song));
+
+        songTitleView.startAnimation(fadeInAnimation);
+        songArtistView.startAnimation(fadeInAnimation);
     }
 
-    private void registerAudioProgressBroadcastReceiver(){
-        audioProgressBroadcastReceiver = new AudioProgressBroadcastReceiver();
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(AudioRequests.AUDIO_PROGRESS);
-        registerReceiver(audioProgressBroadcastReceiver, intentFilter);
+    private void changeSelectedTabIconColor(int albumCoverColor){
+        int pos = tabLayout.getSelectedTabPosition();
+        TabLayout.Tab selectedTab = tabLayout.getTabAt(pos);
+
+        mSectionsPagerAdapter.setIconColor(albumCoverColor);
+        mSectionsPagerAdapter.changeTabToSelected(selectedTab, pos);
     }
 
-    class SongBroadCastReceiver extends BroadcastReceiver {
+    public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
+        Song song = sendSongDetailsEvent.getSong();
+        String albumCoverPath = song.getAlbumCoverPath();
+        Bitmap albumCoverPicture = pathToBitmapConverter.getAlbumCoverFromMusicFile(albumCoverPath);
+        int albumCoverColor = sendSongDetailsEvent.getSongAlbumColor();
+        int duration = sendSongDetailsEvent.getDuration().intValue();
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Song song = intent.getParcelableExtra("song");
-            Long songDuration = intent.getLongExtra("songDuration", 0);
-            int albumCoverColor = intent.getIntExtra("albumCoverColor", 0);
 
-            String albumCoverPath = song.getAlbumCoverPath();
-            Bitmap albumCoverPicture = pathToBitmapConverter.getAlbumCoverFromMusicFile(albumCoverPath);
+        changeAlbumCoverPicture(albumCoverPicture);
+        setNewSongDescriptionAnimation(song);
+        initializeProgressBar(duration, albumCoverColor);
 
-            changeAlbumCoverPicture(albumCoverPicture);
-            initProgressBar(songDuration);
-            setNewSongDescriptionAnimation(song);
-
-            if(!statePlaying) {
-                changePlayButtonStateToPause();
-            }
-
-            setAllViewsTransparent();
-            blurBackgroundImage(albumCoverPicture);
-
-            changeSelectedTabIconColor(albumCoverColor);
-
+        if(!statePlaying){
+            changePlayButtonStateToPause();
         }
 
-        private void setNewSongDescriptionAnimation(Song song){
-            Animation fadeInAnimation = AnimationUtils.loadAnimation(MainActivity.this, R.anim.fade_in_animation);
-            fadeInAnimation.setAnimationListener(setArtistTitleWithAnimation(song));
+        setAllViewsTransparent();
+        blurBackgroundImage(albumCoverPicture);
+        changeSelectedTabIconColor(albumCoverColor);
 
-            songTitleView.startAnimation(fadeInAnimation);
-            songArtistView.startAnimation(fadeInAnimation);
-        }
-
-        private void changeSelectedTabIconColor(int albumCoverColor){
-            int pos = tabLayout.getSelectedTabPosition();
-            TabLayout.Tab selectedTab = tabLayout.getTabAt(pos);
-
-            mSectionsPagerAdapter.setIconColor(albumCoverColor);
-            mSectionsPagerAdapter.changeTabToSelected(selectedTab, pos);
-        }
-
-        private void initProgressBar(Long songDuration){
-            audioProgressBar.setProgress(0);
-            audioProgressBar.setMax((int) (long) songDuration);
-        }
     }
 
-    class AudioProgressBroadcastReceiver extends BroadcastReceiver {
+    public void onEvent(FadeInActivityEvent fadeInActivityEvent){
+        fadeInViews();
+    }
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int currentPositionInSong = intent.getIntExtra("currentPosition", 0);
-            audioProgressBar.setProgress(currentPositionInSong);
-        }
+    public void onEvent(ProgressUpdateEvent progressUpdateEvent) {
+        int currentPosition = progressUpdateEvent.getCurrentPosition();
+        audioProgressBar.setProgress(currentPosition);
     }
 }
 

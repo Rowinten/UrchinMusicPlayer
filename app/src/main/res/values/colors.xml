@@ -53,7 +53,7 @@
     <!--<color name="recyclerSubTitleColor">@android:color/darker_gray</color>-->
     <!--<color name="recyclerTitleColor">#000000</color>-->
 
-    <color name="transparent">@android:color/transparent</color>
+    <color name="transparent">#00000000</color>
 
     <color name="currentlyPlayingTabTransparency">#80000000</color>
     <color name="viewPagerTransparency">#4D000000</color>

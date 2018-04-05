@@ -1,12 +1,7 @@
 package com.example.rowin.urchinmusicplayer.fragment;
 
 import android.app.Dialog;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.res.ColorStateList;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -14,8 +9,6 @@ import android.support.v7.widget.AppCompatImageButton;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,25 +16,26 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.activity.MainActivity;
 import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
+import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
+import com.example.rowin.urchinmusicplayer.events.ShuffleEvent;
 import com.example.rowin.urchinmusicplayer.model.Globals;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
-import com.example.rowin.urchinmusicplayer.util.AudioRequests;
+import com.example.rowin.urchinmusicplayer.util.Animations;
 import com.example.rowin.urchinmusicplayer.util.SortingOptionDialogMenu;
 import com.example.rowin.urchinmusicplayer.util.HidingScrollListener;
-import com.example.rowin.urchinmusicplayer.util.SortingOptions;
 import com.example.rowin.urchinmusicplayer.util.TextWatcherSorter;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 
 import java.util.ArrayList;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * Created by Rowin on 2/24/2018.
@@ -50,7 +44,6 @@ import java.util.ArrayList;
 //TODO RecyclerView overlaps with the currently_playing_tab_view
 public class SongListFragment extends Fragment{
     public RecyclerViewAdapter recyclerViewAdapter;
-    private ChangeHighlightedTabReceiver changeHighlightedTabReceiver;
 
     private RecyclerView songListRecyclerView;
 
@@ -61,7 +54,9 @@ public class SongListFragment extends Fragment{
 
     private MusicStorage musicStorage;
     private WindowUtils windowUtils;
-    private AudioRequests audioRequests;
+    private Animations animations;
+
+    private boolean shuffleAnimated = false;
 
     public SongListFragment(){
 
@@ -91,14 +86,14 @@ public class SongListFragment extends Fragment{
     public void onResume() {
         super.onResume();
 
-        registerChangeHighlightedTabReceiver();
+        EventBus.getDefault().register(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
 
-        getActivity().unregisterReceiver(changeHighlightedTabReceiver);
+        EventBus.getDefault().unregister(this);
     }
 
     private int getColorFromBundle(){
@@ -121,7 +116,7 @@ public class SongListFragment extends Fragment{
     private void initializeClasses(){
         musicStorage = new MusicStorage(getContext());
         windowUtils = new WindowUtils(getContext());
-        audioRequests = new AudioRequests(getContext());
+        animations = new Animations(getContext());
     }
 
     private void initializeRecyclerView(){
@@ -184,17 +179,17 @@ public class SongListFragment extends Fragment{
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                audioRequests.sendShuffleRequest();
+                EventBus.getDefault().post(new ShuffleEvent());
+
+                if(!shuffleAnimated){
+                    animations.shuffleToCancelAnimation(fab);
+                    shuffleAnimated = true;
+                } else {
+                    animations.cancelToShuffleAnimation(fab);
+                    shuffleAnimated = false;
+                }
             }
         });
-    }
-
-    private void registerChangeHighlightedTabReceiver(){
-        changeHighlightedTabReceiver = new ChangeHighlightedTabReceiver();
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(AudioRequests.BROADCAST_ACTION);
-        getActivity().registerReceiver(changeHighlightedTabReceiver, intentFilter);
     }
 
     private RecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
@@ -202,6 +197,7 @@ public class SongListFragment extends Fragment{
             @Override
             public void onItemClick(int position, Song song) {
                 ((MainActivity) getActivity()).playAudio(position);
+                ((MainActivity) getActivity()).audioProgressBar.setProgress(0);
 //                searchSongEditText.setCursorVisible(false);
                 windowUtils.hideSoftKeyboard(getActivity().getCurrentFocus());
 
@@ -227,17 +223,12 @@ public class SongListFragment extends Fragment{
 //        });
 //    }
 
-    class ChangeHighlightedTabReceiver extends BroadcastReceiver {
+    //EventBus onEventListener, listens for an event send by EventBus with Event type SendSongDetailsEvent. Says it is not used, but it will be
+    public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
+        int newPosition = sendSongDetailsEvent.getSongIndex();
+        int color = sendSongDetailsEvent.getSongAlbumColor();
 
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int newPosition = intent.getIntExtra("newIndex", 0);
-            int color = intent.getIntExtra("albumCoverColor", 0);
-
-            changeSelectedTab(newPosition, color);
-            fab.setBackgroundTintList(ColorStateList.valueOf(color));
-            songListRecyclerView.smoothScrollToPosition(newPosition);
-
-        }
+        changeSelectedTab(newPosition, color);
+        fab.setBackgroundTintList(ColorStateList.valueOf(color));
     }
 }
