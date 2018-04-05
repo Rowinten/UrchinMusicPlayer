@@ -2,6 +2,7 @@ package com.example.rowin.urchinmusicplayer.util;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.util.DisplayMetrics;
@@ -45,6 +46,15 @@ public class WindowUtils {
             result = context.getResources().getDimensionPixelSize(resourceId);
         }
         return result;
+    }
+
+    public float getCenterScreenX(View view){
+        return context.getResources().getDisplayMetrics().widthPixels / 2 - getMarginConstraintView(view);
+    }
+
+    private float getMarginConstraintView(View view){
+        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) view.getLayoutParams();
+        return convertDpToPx(lp.leftMargin);
     }
 
     public void setWindowMetrics(Window window, Toolbar toolbar, TabLayout tabs){

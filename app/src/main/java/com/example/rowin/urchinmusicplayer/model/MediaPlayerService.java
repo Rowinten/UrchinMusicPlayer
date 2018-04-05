@@ -17,6 +17,7 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
+import com.example.rowin.urchinmusicplayer.events.ChangeMediaPositionEvent;
 import com.example.rowin.urchinmusicplayer.events.ChangeMediaStateEvent;
 import com.example.rowin.urchinmusicplayer.events.PlaySongEvent;
 import com.example.rowin.urchinmusicplayer.events.ProgressUpdateEvent;
@@ -480,6 +481,11 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     public void onEvent(ShuffleEvent shuffleEvent){
         isShuffled = !isShuffled;
+    }
+
+    public void onEvent(ChangeMediaPositionEvent changeMediaPositionEvent){
+        int newPosition = changeMediaPositionEvent.getNewSongPosition();
+        mediaPlayer.seekTo(newPosition);
     }
 
     public class LocalBinder extends Binder {
