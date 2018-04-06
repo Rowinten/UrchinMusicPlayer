@@ -1,13 +1,14 @@
 package com.example.rowin.urchinmusicplayer.activity;
 
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.AppBarLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
@@ -23,8 +24,10 @@ import com.example.rowin.urchinmusicplayer.events.ProgressUpdateEvent;
 import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
 import com.example.rowin.urchinmusicplayer.events.SkipSongEvent;
 import com.example.rowin.urchinmusicplayer.model.MediaPlayerService;
+import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
+import com.example.rowin.urchinmusicplayer.util.ColorReader;
+import com.example.rowin.urchinmusicplayer.util.Converter;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 
 import de.greenrobot.event.EventBus;
@@ -38,12 +41,13 @@ public class SongActivity extends AppCompatActivity {
     private AppBarLayout appBar;
 
     private ImageView playButton, nextButton, previousButton;
-    private TextView songTitleView, songArtistView;
+    private TextView songTitleView, songArtistView, progressCounterView, songDurationView;
     private SeekBar seekBar;
 
-    private PathToBitmapConverter pathToBitmapConverter;
+    private Converter converter;
     private WindowUtils windowUtils;
     private Animations animations;
+    private ColorReader colorReader;
 
 
     @Override
@@ -66,6 +70,7 @@ public class SongActivity extends AppCompatActivity {
         windowUtils.setWindowMetrics(getWindow(), appBar);
         fadeInViews();
         animations.albumImageScaleIncreaseAnimation(albumImageView, windowUtils.getCenterScreenX(albumImageView));
+        seekBar.setThumb(getResources().getDrawable(R.drawable.song_tab_icon_fill_animation));
     }
 
     @Override
@@ -109,29 +114,37 @@ public class SongActivity extends AppCompatActivity {
         seekBar = findViewById(R.id.seekBar);
         songTitleView = findViewById(R.id.title_text_view_song_activity);
         songArtistView = findViewById(R.id.subtitle_text_view_song_activity);
+        progressCounterView = findViewById(R.id.progress_counter);
+        songDurationView = findViewById(R.id.song_duration_view_song_activity);
     }
 
     private void initializeClasses(){
-        pathToBitmapConverter = new PathToBitmapConverter();
+        converter = new Converter();
         windowUtils = new WindowUtils(this);
         animations = new Animations(this);
+        colorReader = new ColorReader();
     }
 
     private void initializeSeekBar(int albumColor, int songDuration){
-        seekBar.getProgressDrawable().setColorFilter(albumColor, PorterDuff.Mode.SRC_IN);
         seekBar.setMax(songDuration);
+        seekBar.setThumbTintList(ColorStateList.valueOf(albumColor));
+        seekBar.getProgressDrawable().setColorFilter(albumColor, PorterDuff.Mode.SRC_IN);
     }
 
     private void bindViews(Intent mainActivityIntent){
         String pathToAlbumCover = mainActivityIntent.getStringExtra("albumImagePath");
         String songName = mainActivityIntent.getStringExtra("songName");
         String songArtist = mainActivityIntent.getStringExtra("songArtist");
+        Long songDuration = mainActivityIntent.getLongExtra("songDuration", 0);
+        Bitmap albumBitmap = converter.getAlbumCoverFromMusicFile(pathToAlbumCover);
+        int albumColor = colorReader.getComplimentedColor(colorReader.getDominantColor(albumBitmap));
 
-        Bitmap albumBitmap = pathToBitmapConverter.getAlbumCoverFromMusicFile(pathToAlbumCover);
+        initializeSeekBar(albumColor, songDuration.intValue());
         albumImageView.setImageBitmap(albumBitmap);
-
         songTitleView.setText(songName);
         songArtistView.setText(songArtist);
+        progressCounterView.setText("0:00");
+        songDurationView.setText(converter.convertToDuration(songDuration));
     }
 
     private void registerPlayButtonClickListener(){
@@ -149,6 +162,7 @@ public class SongActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_NEXT));
+                seekBar.setProgress(0);
             }
         });
     }
@@ -158,6 +172,7 @@ public class SongActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_PREVIOUS));
+                seekBar.setProgress(0);
             }
         });
     }
@@ -204,14 +219,24 @@ public class SongActivity extends AppCompatActivity {
     }
 
     public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
+        Song newSong = sendSongDetailsEvent.getSong();
+        Bitmap albumCover = converter.getAlbumCoverFromMusicFile(newSong.getAlbumCoverPath());
+        String songName = newSong.getSongName();
+        String songArtist = newSong.getArtist();
         int albumColor = sendSongDetailsEvent.getSongAlbumColor();
-        int songDuration = sendSongDetailsEvent.getDuration().intValue();
+        Long songDuration = sendSongDetailsEvent.getDuration();
 
-        initializeSeekBar(albumColor, songDuration);
+        initializeSeekBar(albumColor, songDuration.intValue());
+        songTitleView.setText(songName);
+        songArtistView.setText(songArtist);
+        albumImageView.setImageBitmap(albumCover);
+        songDurationView.setText(converter.convertToDuration(songDuration));
     }
 
     public void onEvent(ProgressUpdateEvent progressUpdateEvent){
         int currentPosition = progressUpdateEvent.getCurrentPosition();
+        String roundedPositionValue = converter.convertToDuration((long) currentPosition);
         seekBar.setProgress(currentPosition);
+        progressCounterView.setText(roundedPositionValue);
     }
 }

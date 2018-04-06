@@ -1,22 +1,15 @@
 package com.example.rowin.urchinmusicplayer.adapter;
 
-import android.app.LauncherActivity;
 import android.content.Context;
-import android.graphics.PorterDuff;
 import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.rowin.urchinmusicplayer.R;
-import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.util.Converter;
 
 import java.util.ArrayList;
 
@@ -28,6 +21,7 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     private ArrayList<Song> listOfSongs;
     private final OnItemClickListener listener;
     private Context context;
+    private Converter converter;
 
     private int textColor;
     private int checkedPosition = -1;
@@ -40,6 +34,8 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         this.listOfSongs = listOfSongs;
         this.listener = listener;
         this.context = context;
+
+        converter = new Converter();
         textColor = context.getResources().getColor(R.color.recyclerTitlePressedColor);;
     }
 
@@ -83,23 +79,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
         this.textColor = color;
     }
 
-    //MediaStore.Audio.Media.Duration returns value in milliseconds, this function converts to minute:seconds format (example 3:22)
-    private String convertToDuration(Long songDuration){
-        String secondsBelowZero = "";
-        long seconds = songDuration/1000;
-        long minutes = seconds / 60;
-        seconds = seconds % 60;
-
-
-
-        if(seconds < 10){
-            secondsBelowZero = "0" + seconds;
-            return minutes +":"+ secondsBelowZero;
-        }
-
-        return minutes +":"+ seconds;
-    }
-
     class ItemViewHolder extends RecyclerView.ViewHolder{
         TextView songTitleView;
         TextView songBandNameView;
@@ -112,13 +91,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
 
             songTitleView = itemView.findViewById(R.id.song_title_view_currently_playing_tab);
             songBandNameView = itemView.findViewById(R.id.song_band_name_view);
-            songDurationView = itemView.findViewById(R.id.song_duration_view);
+            songDurationView = itemView.findViewById(R.id.song_duration_view_song_activity);
         }
 
         void bind(final Song song, int position, final ItemViewHolder holder, final OnItemClickListener listener){
             songTitleView.setText(song.getSongName());
             songBandNameView.setText(song.getArtist());
-            songDurationView.setText(convertToDuration(song.getDuration()));
+            songDurationView.setText(converter.convertToDuration(song.getDuration()));
 
             if(position == checkedPosition){
                 songTitleView.setTextColor(textColor);

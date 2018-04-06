@@ -39,7 +39,7 @@ import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
-import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
+import com.example.rowin.urchinmusicplayer.util.Converter;
 import com.example.rowin.urchinmusicplayer.util.SongManager;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 import com.jgabrielfreitas.core.BlurImageView;
@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     public Integer lastPlayedSongIndex = null;
 
     private SectionsPagerAdapter mSectionsPagerAdapter;
-    private PathToBitmapConverter pathToBitmapConverter;
+    private Converter converter;
     private Animations animations;
     private ServiceConnection serviceConnection;
     private MediaPlayerService playerService;
@@ -120,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 songIntent.putExtra("albumImagePath", currentSong.getAlbumCoverPath());
                 songIntent.putExtra("songName", currentSong.getSongName());
                 songIntent.putExtra("songArtist", currentSong.getArtist());
+                songIntent.putExtra("songDuration", currentSong.getDuration());
                 startActivity(songIntent);
 
                 fadeOutViews();
@@ -175,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
                     lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex();
                     if(lastPlayedSongIndex != null){
                         lastPlayedSong = listOfSongs.get(lastPlayedSongIndex);
-                        Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
+                        Bitmap albumCover = converter.getAlbumCoverFromMusicFile(lastPlayedSong.getAlbumCoverPath());
                         initializeSongTab(lastPlayedSong);
                         playAudio(lastPlayedSongIndex);
 
@@ -245,7 +246,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeClasses(){
         animations = new Animations(this);
-        pathToBitmapConverter = new PathToBitmapConverter();
+        converter = new Converter();
         musicStorage = new MusicStorage(this);
         windowUtils = new WindowUtils(this);
     }
@@ -253,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
     private void initializeSongTab(Song song){
         songTitleView.setText(song.getSongName());
         songArtistView.setText(song.getArtist());
-        Bitmap albumCover = pathToBitmapConverter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+        Bitmap albumCover = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
         frontAlbumCoverView.setImageBitmap(albumCover);
     }
 
@@ -428,7 +429,7 @@ public class MainActivity extends AppCompatActivity {
     public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
         Song song = sendSongDetailsEvent.getSong();
         String albumCoverPath = song.getAlbumCoverPath();
-        Bitmap albumCoverPicture = pathToBitmapConverter.getAlbumCoverFromMusicFile(albumCoverPath);
+        Bitmap albumCoverPicture = converter.getAlbumCoverFromMusicFile(albumCoverPath);
         int albumCoverColor = sendSongDetailsEvent.getSongAlbumColor();
         int duration = sendSongDetailsEvent.getDuration().intValue();
 

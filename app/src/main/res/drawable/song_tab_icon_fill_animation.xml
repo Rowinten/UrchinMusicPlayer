@@ -4,8 +4,8 @@
     <aapt:attr name="android:drawable">
         <vector
             android:name="music_note_unfill"
-            android:width="56dp"
-            android:height="56dp"
+            android:width="25dp"
+            android:height="25dp"
             android:viewportWidth="56"
             android:viewportHeight="56">
             <path

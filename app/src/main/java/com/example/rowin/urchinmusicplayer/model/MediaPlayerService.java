@@ -25,7 +25,7 @@ import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
 import com.example.rowin.urchinmusicplayer.events.ShuffleEvent;
 import com.example.rowin.urchinmusicplayer.events.SkipSongEvent;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
-import com.example.rowin.urchinmusicplayer.util.PathToBitmapConverter;
+import com.example.rowin.urchinmusicplayer.util.Converter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,7 +61,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private AudioManager audioManager;
     private MusicStorage musicStorage;
     private ColorReader colorReader;
-    private PathToBitmapConverter pathToBitmapConverter;
+    private Converter converter;
     private AudioFocusRequest audioFocusRequest;
     private BecomingNoisyReceiver becomingNoisyReceiver;
 
@@ -90,7 +90,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     public int onStartCommand(Intent intent, int flags, int startId) {
 
         colorReader = new ColorReader();
-        pathToBitmapConverter = new PathToBitmapConverter();
+        converter = new Converter();
         musicStorage = new MusicStorage(getApplicationContext());
 
         songIndex = musicStorage.loadAudioIndex();
@@ -145,7 +145,9 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             //Checks if the index is valid and not out of bounds, then sets the newSongIndex as
             //the new index so that when the new mediaPlayer is initialized, the mediaPlayer knows which song to pick.
             if (newSongIndex != -1 && newSongIndex < listOfSongs.size()) {
-                if(newSongIndex < firstlyClickedSongIndex || newSongIndex < firstlyClickedSongIndex) {
+                //checks if index isn't equal to first clicked song index. so that when users clicks on song
+                //and listens to all songs in playlist, it ends at the first clicked song again.
+                if(newSongIndex != firstlyClickedSongIndex) {
                     if (newSongIndex == listOfSongs.size()) {
                         newSongIndex = 0;
                     }
@@ -154,7 +156,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
                     mediaFile = song.getSongPath();
 
                     initAndPrepareMediaPlayer();
-
                     sendSongToActivity(song);
                     //sendSongProgressToActivity();
                 }
@@ -221,7 +222,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
 
     private void sendSongToActivity(Song song) {
-        int dominantColorAlbumCover = colorReader.getDominantColor(pathToBitmapConverter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
+        int dominantColorAlbumCover = colorReader.getDominantColor(converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
         int complimentedColor = colorReader.getComplimentedColor(dominantColorAlbumCover);
 
         EventBus.getDefault().post(new SendSongDetailsEvent(song.getDuration(), songIndex, complimentedColor, song));
