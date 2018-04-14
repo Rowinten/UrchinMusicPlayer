@@ -7,10 +7,12 @@ import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.support.v7.widget.Toolbar;
+import android.widget.RelativeLayout;
 
 /**
  * Created by Rowin on 3/28/2018.

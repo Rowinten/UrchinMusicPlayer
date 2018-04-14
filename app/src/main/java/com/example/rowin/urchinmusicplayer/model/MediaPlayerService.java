@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import de.greenrobot.event.EventBus;
 
@@ -52,7 +54,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     //When user clicks song, this is the beginning index the onCompletion listener references, so that when user doesn't select song, and listens to all songs in list
     //it ends again at this index. resets when user selects a new song.
-    private Integer firstlyClickedSongIndex;
+    private Integer selectedSongIndex;
     //path to the audio file
     private String mediaFile;
     private int resumePosition;
@@ -64,6 +66,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private Converter converter;
     private AudioFocusRequest audioFocusRequest;
     private BecomingNoisyReceiver becomingNoisyReceiver;
+    private Timer updateTimer;
 
     private boolean ongoingCall = false;
     private boolean isShuffled = false;
@@ -110,7 +113,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         if (requestAudioFocus()) {
             initAndPrepareMediaPlayer();
 
-            //sendSongProgressToActivity();
         } else {
             stopSelf();
         }
@@ -133,21 +135,27 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-        stopMedia();
-        Log.d("ppp", "init");
+        stopProgressUpdateEvent();
+
         if(isShuffled && !shuffledSongList.isEmpty()){
             shuffleToNextMedia();
         } else {
-
             //OnCompletion of song, go to next song by +1 the song index
             int newSongIndex = songIndex + 1;
-
             //Checks if the index is valid and not out of bounds, then sets the newSongIndex as
             //the new index so that when the new mediaPlayer is initialized, the mediaPlayer knows which song to pick.
             if (newSongIndex != -1 && newSongIndex < listOfSongs.size()) {
+                //When user selects a song by tapping on it, selectedSongIndex gets the value of that song, so that when user doesn't select a new song and listens
+                //Through whole list of songs it ends playing songs at the selected song index again. When the selectedIndex is null, because for example user starts app
+                //and clicks the next button first instead of selecting a song in the list. the selectedSongIndex will instead be the song the user lastly listened to in previous session.
+                if(selectedSongIndex == null){
+                    selectedSongIndex = songIndex;
+                }
+
                 //checks if index isn't equal to first clicked song index. so that when users clicks on song
                 //and listens to all songs in playlist, it ends at the first clicked song again.
-                if(newSongIndex != firstlyClickedSongIndex) {
+                if(newSongIndex != selectedSongIndex) {
+                    //checks if index is at the end of the list, so that next index starts at beginning again.
                     if (newSongIndex == listOfSongs.size()) {
                         newSongIndex = 0;
                     }
@@ -157,7 +165,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
                     initAndPrepareMediaPlayer();
                     sendSongToActivity(song);
-                    //sendSongProgressToActivity();
                 }
             }
 
@@ -180,9 +187,9 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             songHasBeenPlayed = true;
         } else {
             playMedia();
+            startProgressUpdateEvent();
         }
 
-        sendSongProgressToActivity();
     }
 
     @Override
@@ -226,11 +233,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         int complimentedColor = colorReader.getComplimentedColor(dominantColorAlbumCover);
 
         EventBus.getDefault().post(new SendSongDetailsEvent(song.getDuration(), songIndex, complimentedColor, song));
-    }
-
-    private void sendSongProgressToActivity(){
-        ProgressRunnable progressRunnable = new ProgressRunnable();
-        new Thread(progressRunnable).start();
     }
 
     private void registerBecomingNoisyReceiver() {
@@ -292,6 +294,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     private void initAndPrepareMediaPlayer() {
+        stopMedia();
         initMediaPlayer();
         mediaPlayer.prepareAsync();
     }
@@ -329,8 +332,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private void shuffleToNextMedia(){
         //Checks if shuffledSongList is Empty, every time a song gets picked it gets removed from the shuffledSongList. That way a song cannot get selected twice,
         //and will shuffle through all the songs in random order.
-        mediaPlayer.stop();
-        mediaPlayer.release();
 
         int index = new Random().nextInt(shuffledSongList.size());
         Song shufflePickedSong = shuffledSongList.get(index);
@@ -353,6 +354,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         if (Objects.equals(skipType, "NEXT")) {
             newSongIndex = songIndex + 1;
         } else if (Objects.equals(skipType, "PREVIOUS")) {
+            //todo media has been stopped before getCurrentPosition call, getCurrentPosition cannot be called when mediaplayer has been stopped.
             if(mediaPlayer != null && mediaPlayer.getCurrentPosition() > 5000){
                 mediaPlayer.seekTo(0);
                 return;
@@ -369,8 +371,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         }
 
         if (newSongIndex != -1 && newSongIndex < listOfSongs.size()) {
-            stopMedia();
-
             songIndex = newSongIndex;
             mediaFile = listOfSongs.get(songIndex).getSongPath();
             musicStorage.storeAudioIndex(newSongIndex);
@@ -418,6 +418,26 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         audioManager.abandonAudioFocus(this);
     }
 
+    private void startProgressUpdateEvent(){
+        updateTimer = new Timer();
+        updateTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if(mediaPlayer.isPlaying()) {
+                    EventBus.getDefault().post(new ProgressUpdateEvent(mediaPlayer.getCurrentPosition()));
+                }
+            }
+        }, 0, 1000);
+    }
+
+    private void stopProgressUpdateEvent(){
+        if(updateTimer == null){
+            return;
+        }
+        updateTimer.cancel();
+        updateTimer.purge();
+    }
+
     private Boolean areArraysIdentical(ArrayList<Song> array1, ArrayList<Song> array2){
         for(Song song: array1){
             for(Song song2: array2){
@@ -431,14 +451,16 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     public void onEvent(ChangeMediaStateEvent changeMediaStateEvent){
         if(mediaPlayer.isPlaying()){
-            mediaPlayer.pause();
+            pauseMedia();
+            stopProgressUpdateEvent();
         } else {
-            mediaPlayer.start();
+            playMedia();
+            startProgressUpdateEvent();
         }
     }
 
     public void onEvent(PlaySongEvent playSongEvent){
-        stopMedia();
+        stopProgressUpdateEvent();
 
         //Checks if the audioList has changed due to a filter being applied.
         if(!areArraysIdentical(listOfSongs, musicStorage.loadAudio())){
@@ -449,7 +471,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         resetShuffledSongList(listOfSongs);
 
         songIndex = playSongEvent.getSongIndex();
-        firstlyClickedSongIndex = songIndex;
+        selectedSongIndex = songIndex;
 
         Song song = listOfSongs.get(songIndex);
         mediaFile = song.getSongPath();
@@ -462,6 +484,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     public void onEvent(SkipSongEvent skipSongEvent){
+        stopProgressUpdateEvent();
+
         if(isShuffled){
             //if user clicks next button but all songs in list have been shuffled and played
             //already, then refill shuffledSongList and shuffle and play again
@@ -502,20 +526,4 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
             pauseMedia();
         }
     }
-
-    public class ProgressRunnable implements Runnable {
-
-        @Override
-        public void run() {
-            while(mediaPlayer.isPlaying()) {
-                try {
-                    Thread.sleep(1000);
-                    EventBus.getDefault().post(new ProgressUpdateEvent(mediaPlayer.getCurrentPosition()));
-                } catch (InterruptedException e){
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
 }
