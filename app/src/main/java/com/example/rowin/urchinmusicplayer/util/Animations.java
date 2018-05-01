@@ -1,16 +1,17 @@
 package com.example.rowin.urchinmusicplayer.util;
 
-import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
+import android.view.animation.DecelerateInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
@@ -39,69 +40,50 @@ public class Animations {
         slideOutLeft = (AnimatorSet) AnimatorInflater.loadAnimator(context, R.animator.slide_out_left_animation);
     }
 
-    public void fadeInAnimation(final View view){
+    public void fadeAnimation(final View view, float toAlpha, int duration){
         view.animate()
-                .alpha(1f)
-                .setDuration(0)
-                .setListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        view.setVisibility(View.VISIBLE);
-                    }
-
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
-
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animator) {
-
-                    }
-                });
+                .alpha(toAlpha)
+                .setDuration(duration);
     }
 
-    public void fadeOutAnimation(final View view){
-        view.animate()
-                .alpha(0f)
-                .setDuration(175)
-                .setListener(new Animator.AnimatorListener() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
-                    }
+    public void fadeBackgroundAnimation(final View fadeView, float fromAlpha, float toAlpha, int duration, final boolean fadeOut){
+        Animation fadeAnimation = new AlphaAnimation(fromAlpha, toAlpha);
+        fadeAnimation.setDuration(duration);
 
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        view.setVisibility(View.INVISIBLE);
-                    }
+        if(!fadeOut) {
+            fadeAnimation.setInterpolator(new DecelerateInterpolator());
+        } else {
+            fadeAnimation.setInterpolator(new AccelerateInterpolator());
+        }
 
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
+        fadeAnimation.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
 
-                    }
+            }
 
-                    @Override
-                    public void onAnimationRepeat(Animator animator) {
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                if(!fadeOut){
+                    fadeView.setVisibility(View.VISIBLE);
+                } else {
+                    fadeView.setVisibility(View.INVISIBLE);
+                }
+            }
 
-                    }
-                });
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+        fadeView.setAnimation(fadeAnimation);
+        fadeAnimation.start();
     }
 
-    public void frontToBackAnimation(View albumImageHolderFront, View albumImageHolderBack){
-        setFrontOut.setTarget(albumImageHolderFront);
-        setBackIn.setTarget(albumImageHolderBack);
-        setFrontOut.start();
-        setBackIn.start();
-    }
-
-    public void backToFrontAnimation(View albumImageHolderBack, View albumImageHolderFront){
-        setFrontOut.setTarget(albumImageHolderBack);
-        setBackIn.setTarget(albumImageHolderFront);
+    public void verticalSlideAnimation(View frontView, View backView){
+        setFrontOut.setTarget(frontView);
+        setBackIn.setTarget(backView);
         setFrontOut.start();
         setBackIn.start();
     }
@@ -120,6 +102,36 @@ public class Animations {
         slideInLeft.start();
     }
 
+    public void slideImageView(View targetFront, View targetBack, float fromDegree, float toDegree, int duration){
+        ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
+        flipFrontOut.setDuration(duration);
+        ObjectAnimator flipBackIn = ObjectAnimator.ofFloat(targetBack, "rotationY", fromDegree, toDegree);
+        flipBackIn.setDuration(duration);
+
+        flipFrontOut.start();
+        flipBackIn.start();
+    }
+
+    public void slideAndFadeImageView(View targetFront, View targetBack, float fromDegree, float toDegree){
+        ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
+        flipFrontOut.setDuration(400);
+        ObjectAnimator flipBackIn = ObjectAnimator.ofFloat(targetBack, "rotationY", fromDegree, toDegree);
+        flipBackIn.setDuration(400);
+
+        ObjectAnimator fadeOutAnimator = fadeOutObjectAnimator(targetFront, 0);
+        fadeOutAnimator.setStartDelay(200);
+
+        ObjectAnimator fadeInAnimator = fadeInObjectAnimator(targetBack, 0);
+        fadeInAnimator.setStartDelay(200);
+
+
+        fadeOutAnimator.start();
+        fadeInAnimator.start();
+        flipFrontOut.start();
+        flipBackIn.start();
+    }
+
+    //Object animators of the above four animations, which are done via an animator xml file
     public ObjectAnimator slideFrontOut(View imageFront, float fromDegree, float toDegree){
 
         return ObjectAnimator.ofFloat(imageFront, "rotationY", fromDegree, toDegree);
@@ -127,24 +139,24 @@ public class Animations {
 
     public ObjectAnimator slideBackIn(View imageBack, float fromDegree, float toDegree){
         ObjectAnimator slideInAnimator = ObjectAnimator.ofFloat(imageBack, "rotationY", fromDegree, toDegree);
-        //slideInAnimator.setRepeatMode(ValueAnimator.REVERSE);
-
         return slideInAnimator;
     }
 
-    public ObjectAnimator fadeOutObjectAnimator(View image){
+    public ObjectAnimator fadeOutObjectAnimator(View image, int duration){
         ObjectAnimator fadeOutAnimator = ObjectAnimator.ofFloat(image, View.ALPHA, 1f, 0f);
-        fadeOutAnimator.setDuration(0);
+        fadeOutAnimator.setDuration(duration);
 
         return fadeOutAnimator;
     }
 
-    public ObjectAnimator fadeInObjectAnimator(View image){
-        ObjectAnimator fadeInAnimator = ObjectAnimator.ofFloat(image, View.ALPHA, 0, 1);
-        fadeInAnimator.setDuration(0);
+
+    public ObjectAnimator fadeInObjectAnimator(View image, int duration){
+        ObjectAnimator fadeInAnimator = ObjectAnimator.ofFloat(image, View.ALPHA, 0f, 1f);
+        fadeInAnimator.setDuration(duration);
 
         return fadeInAnimator;
     }
+
 
     public void nextSongAnimation(ImageView nextSongButton){
         Drawable nextSongAnimation = nextSongButton.getDrawable();

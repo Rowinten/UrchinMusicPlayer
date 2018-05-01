@@ -8,14 +8,13 @@
     android:fitsSystemWindows="true"
     tools:context="com.example.rowin.urchinmusicplayer.activity.MainActivity">
 
-    <com.jgabrielfreitas.core.BlurImageView
-        android:id="@+id/blur_image_view"
+    <ImageView
+        android:id="@+id/background_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:scaleType="fitXY"
-        app:radius="24" />
+        android:scaleType="fitXY" />
 
     <RelativeLayout
         android:id="@+id/view_holder_main_activity"

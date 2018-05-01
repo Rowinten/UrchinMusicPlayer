@@ -4,8 +4,35 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/song_parent_view"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/viewPagerTransparency">
+    android:layout_height="match_parent">
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/blur_image_view_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+    <ImageView
+        android:id="@+id/front_blur_image_view_song_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:scaleType="fitXY"
+        />
+
+    <ImageView
+        android:id="@+id/back_blur_image_view_song_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:scaleType="fitXY" />
+
+    </android.support.constraint.ConstraintLayout>
 
     <include
         android:id="@+id/include"
@@ -57,8 +84,7 @@
         android:layout_height="35dp"
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
-        android:visibility="invisible"
+        android:layout_marginTop="28dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.501"
         app:layout_constraintStart_toStartOf="parent"
@@ -72,7 +98,6 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:visibility="invisible"
         app:layout_constraintEnd_toStartOf="@+id/repeat_button_song_view"
         app:layout_constraintHorizontal_bias="0.483"
         app:layout_constraintStart_toEndOf="@+id/pause_play_button_song_view"
@@ -87,7 +112,6 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
         android:rotation="180"
-        android:visibility="invisible"
         app:layout_constraintEnd_toStartOf="@+id/pause_play_button_song_view"
         app:layout_constraintHorizontal_bias="0.507"
         app:layout_constraintStart_toEndOf="@+id/shuffle_button_song_view"
@@ -123,7 +147,6 @@
         android:layout_marginEnd="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.508"
         app:layout_constraintStart_toStartOf="parent"
@@ -153,7 +176,6 @@
         android:gravity="center"
         android:textColor="@color/white"
         android:textSize="12sp"
-        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title_text_view_song_activity" />
@@ -169,7 +191,6 @@
         android:gravity="center"
         android:textColor="@color/white"
         android:textSize="16sp"
-        android:visibility="invisible"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/guideline" />

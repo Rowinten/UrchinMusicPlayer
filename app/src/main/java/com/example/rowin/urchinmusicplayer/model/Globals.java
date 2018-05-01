@@ -9,6 +9,14 @@ import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
  */
 
 public class Globals {
+    public static final int FADE_OUT_ACTIVITY_VIEWS_DURATION = 400;
+    public static final int FADE_IN_ACTIVITY_VIEWS_DURATION = 400;
+    public static final float FADE_OUT_ALPHA = 0f;
+    public static final float FADE_IN_ALPHA = 1f;
+    public static final int IMAGE_BLUR = 5;
+
+
+
     private RecyclerView recyclerView;
     private EditText searchSongEditText;
 
