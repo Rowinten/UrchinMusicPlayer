@@ -17,6 +17,12 @@ public class BlurBitmap {
     private static final float BITMAP_SCALE = 0.5f;
     private static final float BLUR_RADIUS = 25f;
 
+    /**
+     *
+     * @param context context of class
+     * @param image image that needs to be blurred
+     * @return blurred version of image
+     */
     public static Bitmap blur(Context context, Bitmap image) {
         int width = Math.round(image.getWidth() * BITMAP_SCALE);
         int height = Math.round(image.getHeight() * BITMAP_SCALE);

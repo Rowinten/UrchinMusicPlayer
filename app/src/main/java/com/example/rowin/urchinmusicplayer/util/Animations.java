@@ -1,5 +1,6 @@
 package com.example.rowin.urchinmusicplayer.util;
 
+import android.animation.Animator;
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
@@ -102,15 +103,16 @@ public class Animations {
         slideInLeft.start();
     }
 
-    public void slideImageView(View targetFront, View targetBack, float fromDegree, float toDegree, int duration){
-        ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
-        flipFrontOut.setDuration(duration);
-        ObjectAnimator flipBackIn = ObjectAnimator.ofFloat(targetBack, "rotationY", fromDegree, toDegree);
-        flipBackIn.setDuration(duration);
-
-        flipFrontOut.start();
-        flipBackIn.start();
-    }
+//    public void slideImageView(View targetFront, View targetBack, float fromDegree, float toDegree, int duration){
+//        ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
+//        flipFrontOut.setDuration(duration);
+//
+//        ObjectAnimator flipBackIn = ObjectAnimator.ofFloat(targetBack, "rotationY", fromDegree, toDegree);
+//        flipBackIn.setDuration(duration);
+//
+//        flipFrontOut.start();
+//        flipBackIn.start();
+//    }
 
     public void slideAndFadeImageView(View targetFront, View targetBack, float fromDegree, float toDegree){
         ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
@@ -142,6 +144,12 @@ public class Animations {
         return slideInAnimator;
     }
 
+    /**
+     * used to fade out Views
+     * @param image image that needs to be faded out
+     * @param duration duration of the animation
+     * @return the fadeOut Animator
+     */
     public ObjectAnimator fadeOutObjectAnimator(View image, int duration){
         ObjectAnimator fadeOutAnimator = ObjectAnimator.ofFloat(image, View.ALPHA, 1f, 0f);
         fadeOutAnimator.setDuration(duration);
@@ -150,6 +158,12 @@ public class Animations {
     }
 
 
+    /**
+     * used to fade in Views
+     * @param image image that needs to be faded in
+     * @param duration duration of the animation
+     * @return the fadeIn Animator
+     */
     public ObjectAnimator fadeInObjectAnimator(View image, int duration){
         ObjectAnimator fadeInAnimator = ObjectAnimator.ofFloat(image, View.ALPHA, 0f, 1f);
         fadeInAnimator.setDuration(duration);

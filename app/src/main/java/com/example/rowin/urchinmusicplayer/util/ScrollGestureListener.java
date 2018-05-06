@@ -14,7 +14,7 @@ import android.widget.OverScroller;
  * Created by Rowin on 4/8/2018.
  */
 
-public abstract class FlingGestureListener extends GestureDetector.SimpleOnGestureListener{
+public abstract class ScrollGestureListener extends GestureDetector.SimpleOnGestureListener{
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 4000;
     public static final int SWIPE_TO_LEFT = 0;
@@ -26,9 +26,7 @@ public abstract class FlingGestureListener extends GestureDetector.SimpleOnGestu
     private int amountPixForAlpha;
     private float swipeVelocity;
 
-
-    //TODO ON SCROLL, FOR EVERY <WIDTH OF VIEW / 180> pixels. View must rotate 1 - 1.5 degree.
-    protected FlingGestureListener(View view){
+    protected ScrollGestureListener(View view){
         amountPixForDegree = (int) ((view.getWidth() / 1.5 ) / 180);
         amountPixForAlpha = (int) ((view.getWidth() / 1.5) / 100);
     }
@@ -38,10 +36,8 @@ public abstract class FlingGestureListener extends GestureDetector.SimpleOnGestu
         return true;
     }
 
-
     @Override
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-
         //Pixels dragged across screen
         float diffX = e2.getX() - e1.getX();
         float degreeScrolled = diffX / amountPixForDegree;

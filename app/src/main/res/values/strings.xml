@@ -11,4 +11,6 @@
     <string name="sort_on_name">Name</string>
     <string name="sort_on_artist">Artist</string>
     <string name="sort_on_duration">Duration</string>
+
+    <string name="startTimer">0:00</string>
 </resources>
