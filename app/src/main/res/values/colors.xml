@@ -55,10 +55,10 @@
 
     <color name="transparent">#00000000</color>
 
-    <color name="currentlyPlayingTabTransparency">#80000000</color>
-    <color name="viewPagerTransparency">#4D000000</color>
+    <color name="currentlyPlayingTabTransparency">#4D000000</color>
+    <color name="viewPagerTransparency">#1A000000</color>
 
-    <color name="toolBarTransparent">#B3000000</color>
+    <color name="toolBarTransparent">#80000000</color>
 
     <color name="currentlyPlayingStartColor">#40212121</color>
     <color name="currentlyPlayingEndColor">#8C000000</color>

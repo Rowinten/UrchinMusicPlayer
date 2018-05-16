@@ -8,6 +8,7 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -17,6 +18,7 @@ import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.fragment.AlbumFragment;
 import com.example.rowin.urchinmusicplayer.fragment.PlaylistFragment;
 import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
+import com.example.rowin.urchinmusicplayer.util.ColorReader;
 
 /**
  * Created by Rowin on 2/24/2018.
@@ -29,10 +31,13 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
     private int colorAccent;
 
+    private ColorReader colorReader;
+
     public SectionsPagerAdapter(FragmentManager fm, Context context, int colorAccent) {
         super(fm);
         this.context = context;
         iconColor = context.getResources().getColor(R.color.colorAccent);
+        colorReader = new ColorReader();
 
         this.colorAccent = colorAccent;
     }
@@ -97,31 +102,16 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         switch(index){
             case 0:
                 ImageView songTabView = (ImageView) tab.getCustomView();
-                VectorChildFinder vector = new VectorChildFinder(context, R.drawable.ic_song_tab_icon_unfocused, songTabView);
-                VectorDrawableCompat.VFullPath path = vector.findPathByName("song_tab_icon_unfocused_path");
-                path.setFillColor(iconColor);
-                path.setStrokeColor(iconColor);
+                colorReader.changeVectorColor(context, songTabView, "song_tab_icon_unfocused_path", iconColor);
                 break;
             case 1:
                 ImageView albumTabView = (ImageView) tab.getCustomView();
-
-                VectorChildFinder vector1 = new VectorChildFinder(context, R.drawable.ic_album_tab_icon_unfocused, albumTabView);
-                VectorDrawableCompat.VFullPath path1 = vector1.findPathByName("album_tab_icon_unfocused_path");
-                path1.setFillColor(iconColor);
-                path1.setStrokeColor(iconColor);
-
+                colorReader.changeVectorColor(context, albumTabView, "album_tab_icon_unfocused_path", iconColor);
                 break;
             case 2:
                 ImageView playlistTabView = (ImageView) tab.getCustomView();
-
-                VectorChildFinder vector2 = new VectorChildFinder(context, R.drawable.ic_playlist_tab_icon_unfocused, playlistTabView);
-                VectorDrawableCompat.VFullPath path2 = vector2.findPathByName("playlist_tab_icon_unfocused_left_path");
-                path2.setFillColor(iconColor);
-                path2.setStrokeColor(iconColor);
-
-                VectorDrawableCompat.VFullPath path3 = vector2.findPathByName("playlist_tab_icon_unfocused_right_path");
-                path3.setFillColor(iconColor);
-                path3.setStrokeColor(iconColor);
+                colorReader.changeVectorColor(context, playlistTabView, "playlist_tab_icon_unfocused_left_path", iconColor);
+                colorReader.changeVectorColor(context, playlistTabView, "playlist_tab_icon_unfocused_right_path", iconColor);
                 break;
         }
     }

@@ -12,6 +12,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
+import android.view.animation.AnimationUtils;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.ScaleAnimation;
 import android.view.animation.TranslateAnimation;
@@ -201,11 +202,13 @@ public class Animations {
         startVectorDrawableAnimation(cancelToShuffleAnimation);
     }
 
-    public void albumImageScaleIncreaseAnimation(ImageView imageView, float toXDelta){
+    public void albumImageScaleIncreaseAnimation(ImageView imageView, float toXDelta, float increaseXTimes){
         AnimationSet animSet = new AnimationSet(true);
         animSet.setFillAfter(true);
         animSet.setDuration(175);
-        ScaleAnimation scale = new ScaleAnimation(1f, 6f, 1f, 6f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0f);
+
+
+        ScaleAnimation scale = new ScaleAnimation(1f, increaseXTimes, 1f, increaseXTimes, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, -0.05f);
         animSet.addAnimation(scale);
         TranslateAnimation translate = new TranslateAnimation( 0, toXDelta , 0, 0);
         animSet.addAnimation(translate);

@@ -269,8 +269,6 @@ public class MainActivity extends AppCompatActivity {
         currentlyPlayingTab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                fadeOutViews();
-
                 ArrayList<Song> lisOfSongs = musicStorage.loadAudio();
                 Song currentSong = lisOfSongs.get(musicStorage.loadAudioIndex());
                 Intent songIntent = new Intent(MainActivity.this, SongActivity.class);
@@ -283,15 +281,6 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void fadeOutViews(){
-        animations.fadeAnimation(viewHolder, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(backgroundImage, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-    }
-
-    public void fadeInViews(){
-        animations.fadeAnimation(viewHolder, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(backgroundImage, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-    }
 
     private void changeAlbumCoverPicture(Bitmap newAlbumCover){
         //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
@@ -474,10 +463,6 @@ public class MainActivity extends AppCompatActivity {
         setAllViewsTransparent();
         changeBackground(albumCoverPicture);
         changeSelectedTabIconColor(albumCoverColor);
-    }
-
-    public void onEvent(FadeInActivityEvent fadeInActivityEvent){
-        fadeInViews();
     }
 
     public void onEvent(ProgressUpdateEvent progressUpdateEvent) {

@@ -10,11 +10,14 @@ import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
-import android.support.design.widget.AppBarLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.widget.ImageView;
@@ -63,7 +66,7 @@ public class SongActivity extends AppCompatActivity {
     private static final int LEFT_SCROLL_THRESHOLD = -90;
 
     private ImageView frontAlbumImageView, backAlbumImageView;
-    private AppBarLayout appBar;
+    private Toolbar appBar;
     private ImageView playButton, nextButton, previousButton;
     private TextView songTitleView, songArtistView, progressCounterView, songDurationView;
     private SeekBar seekBar;
@@ -73,8 +76,9 @@ public class SongActivity extends AppCompatActivity {
     private WindowUtils windowUtils;
     private Animations animations;
     private ColorReader colorReader;
-    private ConstraintLayout AlbumImageViewContainer;
-    private ConstraintLayout albumImageArea;
+    private ConstraintLayout albumImageArea, blurImageViewContainer;
+    private ConstraintLayout buttonContainer;
+    private ConstraintLayout mainView;
     private ImageView frontBlurImageView;
     private ImageView backBlurImageView;
 
@@ -93,7 +97,6 @@ public class SongActivity extends AppCompatActivity {
 
         initializeViews();
         initializeClasses();
-        setAllViewsTransparent();
         bindViews(getIntent());
 
         registerNextButtonClickListener();
@@ -102,11 +105,33 @@ public class SongActivity extends AppCompatActivity {
         registerSeekBarChangeListener();
         registerImageClickListener();
 
-
-        windowUtils.setWindowMetrics(getWindow(), appBar);
         fadeInViews();
-        animations.albumImageScaleIncreaseAnimation(frontAlbumImageView, windowUtils.getCenterScreenX(frontAlbumImageView));
-        animations.albumImageScaleIncreaseAnimation(backAlbumImageView, windowUtils.getCenterScreenX(backAlbumImageView));
+
+        //Checks if layout has been drawn, and therefore we can be able to get the height of the specified view
+        albumImageArea.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            @Override
+            public void onGlobalLayout() {
+                // Ensure you call it only once
+                albumImageArea.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+
+                //set padding after views has been drawn, mainly albumImageArea, otherwise height of albumImageArea is not correct
+                getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+                appBar.setPadding(0, windowUtils.getStatusBarHeight(), 0, 0);
+                buttonContainer.setPadding(0, 0, 0, windowUtils.getNavigationBarHeight());
+
+                //Calculates the amount of times the imageView, that will be scaled, can fit inside its container. So that for all screen sizes the scaled view will fit
+                //inside the albumImageArea view.
+                float amountTimesFit = albumImageArea.getHeight() / frontAlbumImageView.getHeight();
+
+                //Scales animation to the centerX of screen, and enlarges the imageView by amountTimesFit times minus a small proportion
+                animations.albumImageScaleIncreaseAnimation(frontAlbumImageView, windowUtils.getCenterScreenX(frontAlbumImageView), amountTimesFit - 0.5f);
+                animations.albumImageScaleIncreaseAnimation(backAlbumImageView, windowUtils.getCenterScreenX(backAlbumImageView), amountTimesFit - 0.5f);
+                blurImageViewContainer.setBackgroundColor(getResources().getColor(R.color.viewPagerTransparency));
+            }
+        });
+
         seekBar.setThumb(getResources().getDrawable(R.drawable.song_tab_icon_fill_animation));
     }
 
@@ -151,6 +176,10 @@ public class SongActivity extends AppCompatActivity {
     }
 
     private void initializeViews() {
+        mainView = findViewById(R.id.song_parent_view);
+        buttonContainer = findViewById(R.id.button_container);
+        blurImageViewContainer = findViewById(R.id.blur_image_view_container);
+
         frontAlbumImageView = findViewById(R.id.front_album_cover_view);
         backAlbumImageView = findViewById(R.id.back_album_cover_view);
         appBar = findViewById(R.id.appbar);
@@ -163,8 +192,6 @@ public class SongActivity extends AppCompatActivity {
         progressCounterView = findViewById(R.id.progress_counter);
         songDurationView = findViewById(R.id.song_duration_view_song_activity);
         albumImageArea = findViewById(R.id.album_image_area_view);
-
-        AlbumImageViewContainer = findViewById(R.id.blur_image_view_container);
         frontBlurImageView = findViewById(R.id.front_blur_image_view_song_view);
         backBlurImageView = findViewById(R.id.back_blur_image_view_song_view);
     }
@@ -308,12 +335,19 @@ public class SongActivity extends AppCompatActivity {
                 EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_NEXT));
                 seekBar.setProgress(0);
 
-                if(!isPlaying){
-                    animations.playToPauseAnimation(playButton);
-                    isPlaying = true;
-                }
+                changePlayButtonState();
             }
         });
+    }
+
+    /**
+     * used to change the state of the playButton from play to pause. when user starts song the play button has to turn to pause button so user can pause the song
+     */
+    private void changePlayButtonState(){
+        if(!isPlaying){
+            animations.playToPauseAnimation(playButton);
+            isPlaying = true;
+        }
     }
 
     private void registerPreviousButtonClickListener(){
@@ -357,30 +391,19 @@ public class SongActivity extends AppCompatActivity {
         });
     }
 
-    private void setAllViewsTransparent(){
-        appBar.setBackground(getResources().getDrawable(R.color.transparent));
-    }
 
+    /**
+     * used to fade in particular views, when starting the activity
+     */
     private void fadeInViews(){
-        animations.fadeAnimation(playButton, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(nextButton, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(previousButton, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(seekBar, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(songTitleView, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(songArtistView, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
-
-        animations.fadeAnimation(AlbumImageViewContainer, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
+        animations.fadeAnimation(mainView, FADE_IN_ALPHA, FADE_IN_ACTIVITY_VIEWS_DURATION);
     }
 
+    /**
+     * used to fade out particular views, when closing the activity
+     */
     private void fadeOutViews(){
-        animations.fadeAnimation(playButton, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(nextButton, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(previousButton, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(seekBar, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(songTitleView, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-        animations.fadeAnimation(songArtistView, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
-
-        animations.fadeAnimation(AlbumImageViewContainer, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
+        animations.fadeAnimation(mainView, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
     }
 
     /**
@@ -490,6 +513,9 @@ public class SongActivity extends AppCompatActivity {
         private boolean setNewImage = false;
         private boolean isReleasing = false;
         private boolean hasScrolled = false;
+        private boolean animateAllOnRelease = false;
+
+        private Song nextSong;
 
         private ArrayList<Song> listOfSongs;
         private MusicStorage musicStorage;
@@ -538,16 +564,32 @@ public class SongActivity extends AppCompatActivity {
                             scrollingRight = false;
                             hasScrolled = true;
 
-                            if (!isBackVisible) {
-                                setNewImages(backAlbumImageView, backBlurImageView, SWIPE_TO_LEFT);
-                                slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
-                                fadeBackground(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
+                            int nextIndex = musicStorage.loadAudioIndex() - 1;
+
+                            if(nextIndex >=0 && nextIndex < listOfSongs.size()) {
+                                animateAllOnRelease = true;
+                                if (!setNewImage) {
+                                    nextSong = listOfSongs.get(nextIndex);
+                                }
+
+                                    if (!isBackVisible) {
+                                        setNewImages(backAlbumImageView, backBlurImageView, nextSong);
+                                        slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
+                                        fadeBackground(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
+                                        fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
+                                    } else {
+                                        setNewImages(frontAlbumImageView, frontBlurImageView, nextSong);
+                                        slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackLeft, toDegreeBackLeft, IMAGE_VIEW_SCROLL_DURATION, false);
+                                        fadeBackground(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
+                                        fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
+                                    }
                             } else {
-                                setNewImages(frontAlbumImageView, frontBlurImageView, SWIPE_TO_LEFT);
-                                slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackLeft, toDegreeBackLeft, IMAGE_VIEW_SCROLL_DURATION, false);
-                                fadeBackground(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
+                                animateAllOnRelease = false;
+                                if(!isBackVisible){
+                                    slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
+                                } else {
+                                    slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
+                                }
                             }
 
                             fromDegreeScrolling = toDegreeScrolling;
@@ -570,17 +612,33 @@ public class SongActivity extends AppCompatActivity {
                             scrollingRight = true;
                             hasScrolled = true;
 
-                            if (!isBackVisible) {
-                                setNewImages(backAlbumImageView, backBlurImageView, SWIPE_TO_RIGHT);
-                                slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
-                                fadeBackground(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
+                            int nextIndex = musicStorage.loadAudioIndex() + 1;
+
+                            if(nextIndex >=0 && nextIndex < listOfSongs.size()){
+                                animateAllOnRelease = true;
+                                if(!setNewImage) {
+                                    nextSong = listOfSongs.get(nextIndex);
+                                }
+                                    if (!isBackVisible) {
+                                        setNewImages(backAlbumImageView, backBlurImageView, nextSong);
+                                        slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
+                                        fadeBackground(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
+                                        fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
+                                    } else {
+                                        setNewImages(frontAlbumImageView, frontBlurImageView, nextSong);
+                                        slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackRight, toDegreeBackRight, IMAGE_VIEW_SCROLL_DURATION, false);
+                                        fadeBackground(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
+                                        fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
+                                }
                             } else {
-                                setNewImages(frontAlbumImageView, frontBlurImageView, SWIPE_TO_RIGHT);
-                                slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackRight, toDegreeBackRight, IMAGE_VIEW_SCROLL_DURATION, false);
-                                fadeBackground(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
+                                animateAllOnRelease = false;
+                                if(!isBackVisible){
+                                    slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
+                                } else {
+                                    slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
+                                }
                             }
+
 
                             fromDegreeScrolling = toDegreeScrolling;
                             fromDegreeBackRight = toDegreeBackRight;
@@ -596,17 +654,9 @@ public class SongActivity extends AppCompatActivity {
          * Used to change the album image of next or previous song, also used to change the background which is based of the same album picture
          * @param imageView the imageView on which the new Bitmap will be set
          * @param background    the backgroundView on which the new Bitmap will be set
-         * @param scrollingDirection    the direction the user was scrolling
+         * @param song the song which the album picture has to be retrieved
          */
-        private void changeAlbumPictureBasedOn(ImageView imageView, ImageView background, int scrollingDirection){
-            Song song;
-            //if scrolling direction == right then play next song, otherwise play previous song in list.
-            if(scrollingDirection == ScrollGestureListener.SWIPE_TO_RIGHT) {
-                song = listOfSongs.get(musicStorage.loadAudioIndex() + 1);
-
-            } else {
-                song = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
-            }
+        private void changeAlbumPictureBasedOn(ImageView imageView, ImageView background, Song song){
             Bitmap nextAlbumImage = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
             Bitmap blurredAlbumImage = BlurBitmap.blur(SongActivity.this, nextAlbumImage);
             imageView.setImageBitmap(nextAlbumImage);
@@ -627,25 +677,43 @@ public class SongActivity extends AppCompatActivity {
         }
 
         private void onReleaseScreen(){
-            if(scrollingRight) {
+            //animates only the imageView, nothing else. gets used when user is at last song in the list, so that user cannot scroll to new album image, since there is none.
+            //fromDegreeScrolling gets divided by 6 so that user cant scroll enough anymore to scroll past 90 degrees.
+            if(!animateAllOnRelease){
                 if(!isBackVisible) {
-                    slideImageOnRelease(RIGHT_SCROLL_THRESHOLD, fromDegreeScrolling, 0, 180);
-                    fadeBackgroundOnRelease(frontBlurImageView);
+                    slideImageOnRelease(fromDegreeScrolling / 6, 0);
                 } else {
-                    slideImageOnRelease(RIGHT_SCROLL_THRESHOLD, fromDegreeBackRight, 180, 360);
-                    fadeBackgroundOnRelease(backBlurImageView);
+                    if(scrollingRight) {
+                        slideImageOnRelease(fromDegreeScrolling / 6, 180);
+                    } else {
+                        slideImageOnRelease(fromDegreeScrolling / 6, -180);
+                    }
                 }
             } else {
-                if(!isBackVisible) {
-                    slideImageOnRelease(LEFT_SCROLL_THRESHOLD, fromDegreeScrolling, 0, -180);
-                    fadeBackgroundOnRelease(frontBlurImageView);
+                if (scrollingRight) {
+                    if (!isBackVisible) {
+                        slideImageOnRelease(RIGHT_SCROLL_THRESHOLD, fromDegreeScrolling, 0, 180);
+                        fadeBackgroundOnRelease(frontBlurImageView);
+                    } else {
+                        slideImageOnRelease(RIGHT_SCROLL_THRESHOLD, fromDegreeBackRight, 180, 360);
+                        fadeBackgroundOnRelease(backBlurImageView);
+                    }
                 } else {
-                    slideImageOnRelease(LEFT_SCROLL_THRESHOLD, fromDegreeBackLeft, -180, -360);
-                    fadeBackgroundOnRelease(backBlurImageView);
+                    if (!isBackVisible) {
+                        slideImageOnRelease(LEFT_SCROLL_THRESHOLD, fromDegreeScrolling, 0, -180);
+                        fadeBackgroundOnRelease(frontBlurImageView);
+                    } else {
+                        slideImageOnRelease(LEFT_SCROLL_THRESHOLD, fromDegreeBackLeft, -180, -360);
+                        fadeBackgroundOnRelease(backBlurImageView);
+                    }
                 }
-            }
 
-            goneOver90Degree = false;
+                goneOver90Degree = false;
+            }
+        }
+
+        private void slideImageOnRelease(float fromDegree, float toDegree){
+            slideImageView(frontAlbumImageView, backAlbumImageView, fromDegree, toDegree, IMAGE_VIEW_ON_RELEASE_DURATION, true);
         }
 
         /**
@@ -665,6 +733,7 @@ public class SongActivity extends AppCompatActivity {
             if (beforeThreshold) {
                 slideImageView(frontAlbumImageView, backAlbumImageView, fromDegree, degreeBeforeThreshold, IMAGE_VIEW_ON_RELEASE_DURATION, true);
             } else if(pastThreshold){
+                changePlayButtonState();
                 isBackVisible = !isBackVisible;
 
                 slideImageView(frontAlbumImageView, backAlbumImageView, fromDegree, degreePastThreshold, IMAGE_VIEW_ON_RELEASE_DURATION, true);
@@ -798,12 +867,12 @@ public class SongActivity extends AppCompatActivity {
          * @param previouslyFadedView the previous imageView that was faded out, used to set transparency back to 1f again after it has been faded out.
          *                            this happens after the new view has faded in and set in front of the previouslyFadedView. otherwise the previouslyFadedView
          *                            in the back stays transparent
-         * @param scrollingDirection     the direction the user was scrolling
+         * @param song the song which the album picture has to be retrieved
          */
-        private void setNewImages(ImageView albumImageBack, ImageView previouslyFadedView, int scrollingDirection){
+        private void setNewImages(ImageView albumImageBack, ImageView previouslyFadedView, Song song){
             if(!setNewImage) {
                 previouslyFadedView.setAlpha(1f);
-                changeAlbumPictureBasedOn(albumImageBack, previouslyFadedView, scrollingDirection);
+                changeAlbumPictureBasedOn(albumImageBack, previouslyFadedView, song);
                 setNewImage = true;
             }
         }

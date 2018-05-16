@@ -5,6 +5,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**
@@ -19,6 +20,7 @@ public class Song implements Parcelable{
     private String album;
     private String artist;
     private String albumCoverPath;
+    private byte[] rawByteArray;
 
     public Song(){
 
@@ -108,4 +110,11 @@ public class Song implements Parcelable{
         this.albumCoverPath = albumCoverPath;
     }
 
+    public byte[] getRawByteArray() {
+        return rawByteArray;
+    }
+
+    public void setRawByteArray(byte[] rawByteArray) {
+        this.rawByteArray = rawByteArray;
+    }
 }

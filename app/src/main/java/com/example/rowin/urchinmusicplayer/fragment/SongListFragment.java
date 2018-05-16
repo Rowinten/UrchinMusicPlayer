@@ -47,7 +47,7 @@ public class SongListFragment extends Fragment{
 
     private RecyclerView songListRecyclerView;
 
-    private CardView filterBarView;
+    //private CardView filterBarView;
     private EditText searchSongEditText;
     private ImageView filterButton;
     private AppCompatImageButton fab;
@@ -74,10 +74,10 @@ public class SongListFragment extends Fragment{
         registerShuffleButtonClickListener();
 
         //filterEditTextClickListener();
-        initializeFilterMenu();
+        //initializeFilterMenu();
         TextWatcherSorter textWatcherSorter = new TextWatcherSorter(getContext(), songListRecyclerView);
         textWatcherSorter.setCurrentHighlightedSong(musicStorage.loadAudio().get(musicStorage.loadAudioIndex()));
-        searchSongEditText.addTextChangedListener(textWatcherSorter);
+        //searchSongEditText.addTextChangedListener(textWatcherSorter);
 
         return view;
     }
@@ -104,7 +104,7 @@ public class SongListFragment extends Fragment{
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
         searchSongEditText = view.findViewById(R.id.search_song_view);
-        filterBarView = view.findViewById(R.id.filter_bar_view);
+        //filterBarView = view.findViewById(R.id.filter_bar_view);
         searchSongEditText = view.findViewById(R.id.search_song_view);
         fab = view.findViewById(R.id.fab_shuffle_button);
 
@@ -132,17 +132,17 @@ public class SongListFragment extends Fragment{
             @Override
             public void onHide() {
                 int margin = 32;
-                int totalHeightSearchBar = filterBarView.getHeight() + margin;
+                //int totalHeightSearchBar = filterBarView.getHeight() + margin;
                 int totalHeightFab = fab.getHeight() +margin;
 
-                Log.d("d", String.valueOf(filterBarView.getHeight()));
-                filterBarView.animate().translationY(-totalHeightSearchBar).setInterpolator(new AccelerateInterpolator(2));
+                //Log.d("d", String.valueOf(filterBarView.getHeight()));
+                //filterBarView.animate().translationY(-totalHeightSearchBar).setInterpolator(new AccelerateInterpolator(2));
                 fab.animate().translationY(totalHeightFab).setInterpolator(new AccelerateInterpolator(2));
             }
 
             @Override
             public void onShow() {
-                filterBarView.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
+                //filterBarView.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
                 fab.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
             }
         });
@@ -158,22 +158,22 @@ public class SongListFragment extends Fragment{
         }
     }
 
-    private void initializeFilterMenu(){
-        MainActivity mainActivity = ((MainActivity) getActivity());
-        int positionY = windowUtils.getNavigationBarHeight() + filterBarView.getHeight() + mainActivity.currentlyPlayingTab.getHeight() + 24;
-        final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY);
-
-        filterButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if(filterOptionDialog.isShowing()) {
-                    filterOptionDialog.dismiss();
-                } else {
-                    filterOptionDialog.show();
-                }
-            }
-        });
-    }
+//    private void initializeFilterMenu(){
+//        MainActivity mainActivity = ((MainActivity) getActivity());
+//        int positionY = windowUtils.getNavigationBarHeight()  + mainActivity.currentlyPlayingTab.getHeight() + 24;
+//        final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY);
+//
+//        filterButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                if(filterOptionDialog.isShowing()) {
+//                    filterOptionDialog.dismiss();
+//                } else {
+//                    filterOptionDialog.show();
+//                }
+//            }
+//        });
+//    }
 
     private void registerShuffleButtonClickListener(){
         fab.setOnClickListener(new View.OnClickListener() {

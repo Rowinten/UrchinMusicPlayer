@@ -5,11 +5,17 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.renderscript.ScriptGroup;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.example.rowin.urchinmusicplayer.model.Song;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 
 /**
@@ -45,6 +51,7 @@ public class SongManager {
             String songPath = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA));
             String albumCoverPath = null;
 
+
             Cursor cursorAlbum = context.getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART}, MediaStore.Audio.Albums._ID + "=" + albumId, null, null);
 
@@ -61,6 +68,7 @@ public class SongManager {
 
         return listOfSongs;
     }
+
 
     private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, String albumCoverPath, String songPath){
         Song song = new Song();

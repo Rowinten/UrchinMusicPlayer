@@ -11,7 +11,7 @@
             <path
                 android:name="path819"
                 android:pathData="M 29.633 7.457 L 29.633 33.441 C 28.177 32.601 26.497 32.079 24.696 32.079 C 19.236 32.079 14.821 36.493 14.821 41.935 C 14.821 47.376 19.236 51.781 24.696 51.781 C 30.156 51.781 34.571 47.376 34.571 41.935 L 34.571 17.313 L 44.455 17.313 L 44.455 7.457 Z"
-                android:fillColor="#212121"
+                android:fillColor="#000000"
                 android:strokeColor="#b3b3b3"
                 android:strokeWidth="0.40192264"/>
             <group android:name="filled">

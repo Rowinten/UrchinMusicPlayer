@@ -1,7 +1,13 @@
 package com.example.rowin.urchinmusicplayer.util;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.widget.ImageView;
+
+import com.devs.vectorchildfinder.VectorChildFinder;
+import com.devs.vectorchildfinder.VectorDrawableCompat;
+import com.example.rowin.urchinmusicplayer.R;
 
 /**
  * Created by Rowin on 3/14/2018.
@@ -9,6 +15,13 @@ import android.graphics.Color;
 
 //Reads certain type of color from a bitmap object
 public class ColorReader {
+
+    public void changeVectorColor(Context context, ImageView view, String vectorPath, int iconColor){
+        VectorChildFinder vector = new VectorChildFinder(context, R.drawable.ic_song_tab_icon_unfocused, view);
+        VectorDrawableCompat.VFullPath path = vector.findPathByName(vectorPath);
+        path.setFillColor(iconColor);
+        path.setStrokeColor(iconColor);
+    }
 
     //Gets dominant color from a bitmap
     public int getDominantColor(Bitmap bitmap) {

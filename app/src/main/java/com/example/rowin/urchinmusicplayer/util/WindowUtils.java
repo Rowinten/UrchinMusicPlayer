@@ -32,7 +32,7 @@ public class WindowUtils {
         }
     }
 
-    private int getStatusBarHeight() {
+    public int getStatusBarHeight() {
         int result = 0;
         int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
@@ -54,12 +54,26 @@ public class WindowUtils {
         return context.getResources().getDisplayMetrics().widthPixels / 2 - getMarginConstraintView(view);
     }
 
+    public float getCenterScreenY(){
+        return context.getResources().getDisplayMetrics().heightPixels / 2;
+    }
+
     private float getMarginConstraintView(View view){
         ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) view.getLayoutParams();
         return convertDpToPx(lp.leftMargin);
     }
 
-    public void setWindowMetrics(Window window, Toolbar toolbar, TabLayout tabs){
+    public void setMarginConstraintView(View view){
+        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) view.getLayoutParams();
+        lp.setMargins(0,0,0,getNavigationBarHeight());
+    }
+
+
+    public void setWindowMetrics(Window window){
+        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+    }
+
+    public void setWindowMetrics(Window window, View toolbar, View tabs){
         window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
 
         toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
@@ -67,12 +81,6 @@ public class WindowUtils {
         tabs.setPadding(0,0,0, getNavigationBarHeight());
     }
 
-    public void setWindowMetrics(Window window, AppBarLayout toolbar){
-        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-
-        toolbar.setPadding(0, getStatusBarHeight() , 0, 0);
-        toolbar.getLayoutParams().height = toolbar.getLayoutParams().height + getStatusBarHeight();
-    }
 
     public float convertDpToPx(int dp){
         DisplayMetrics metrics = Resources.getSystem().getDisplayMetrics();
