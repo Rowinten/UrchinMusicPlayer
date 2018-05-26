@@ -7,6 +7,9 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.TransitionDrawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -27,7 +30,6 @@ import android.widget.TextView;
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.events.ChangeMediaPositionEvent;
 import com.example.rowin.urchinmusicplayer.events.ChangeMediaStateEvent;
-import com.example.rowin.urchinmusicplayer.events.FadeInActivityEvent;
 import com.example.rowin.urchinmusicplayer.events.ProgressUpdateEvent;
 import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
 import com.example.rowin.urchinmusicplayer.events.SkipSongEvent;
@@ -82,10 +84,13 @@ public class SongActivity extends AppCompatActivity {
     private ImageView frontBlurImageView;
     private ImageView backBlurImageView;
 
+    private Bitmap oldBlurredAlbumCover;
+
     private boolean isPlaying;
-    private boolean isBackVisible = false;
+    private boolean isAlbumBackVisible = false;
     private boolean nextSong = false;
     private boolean setFirstTime = true;
+    private boolean backgroundSwitched = false;
 
     private float fromDegreeButton = 0;
 
@@ -147,7 +152,7 @@ public class SongActivity extends AppCompatActivity {
 
         fadeOutViews();
 
-        if(!isBackVisible){
+        if(!isAlbumBackVisible){
             decreaseView = frontAlbumImageView;
         } else {
             decreaseView = backAlbumImageView;
@@ -157,8 +162,6 @@ public class SongActivity extends AppCompatActivity {
         animationSet.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
-                //sends event so that main activity views get faded in again ( visible )
-                EventBus.getDefault().post(new FadeInActivityEvent());
             }
 
             @Override
@@ -215,10 +218,12 @@ public class SongActivity extends AppCompatActivity {
         String songName = mainActivityIntent.getStringExtra("songName");
         String songArtist = mainActivityIntent.getStringExtra("songArtist");
         Long songDuration = mainActivityIntent.getLongExtra("songDuration", 0);
+        int currentPositionSong = mainActivityIntent.getIntExtra("currentPositionSong", 0);
         Bitmap albumBitmap = converter.getAlbumCoverFromMusicFile(pathToAlbumCover);
         int albumColor = colorReader.getComplimentedColor(colorReader.getDominantColor(albumBitmap));
 
         initializeSeekBar(albumColor, songDuration.intValue());
+        seekBar.setProgress(currentPositionSong);
         frontAlbumImageView.setImageBitmap(albumBitmap);
         songTitleView.setText(songName);
         songArtistView.setText(songArtist);
@@ -226,6 +231,7 @@ public class SongActivity extends AppCompatActivity {
         songDurationView.setText(converter.convertToDuration(songDuration));
 
         Bitmap blurredBitmap = BlurBitmap.blur(this, albumBitmap);
+        oldBlurredAlbumCover = blurredBitmap;
         frontBlurImageView.bringToFront();
         frontBlurImageView.setImageBitmap(blurredBitmap);
     }
@@ -233,17 +239,6 @@ public class SongActivity extends AppCompatActivity {
     private void registerImageClickListener() {
         albumImageArea.setOnTouchListener(new ScrollingArea());
     }
-
-    /**
-     *
-     * @param imageView The imageView that will display the blurredBitmap
-     * @param bitmap    The Bitmap that will be blurred out
-     */
-    private void setNewBlurredBitmap(ImageView imageView, Bitmap bitmap){
-        Bitmap blurredBitmap = BlurBitmap.blur(this, bitmap);
-        imageView.setImageBitmap(blurredBitmap);
-    }
-
 
     /**
      *
@@ -255,10 +250,10 @@ public class SongActivity extends AppCompatActivity {
         //when clicked an animation plays that flips over to the opposite ImageView and displays the album cover of the newly clicked song
         //isAlbumBackVisible keeps record of which side is on the visible side.
         if(nextSong) {
-            changeImageAndBackground(isBackVisible, newAlbumCover, -180, fromDegreeButton, 180, 360);
+            slideImageOnClick(isAlbumBackVisible, newAlbumCover, -180, fromDegreeButton, 180, 360);
         }
         else {
-            changeImageAndBackground(isBackVisible, newAlbumCover, 180, fromDegreeButton, -180, -360);
+            slideImageOnClick(isAlbumBackVisible, newAlbumCover, 180, fromDegreeButton, -180, -360);
         }
     }
 
@@ -277,23 +272,19 @@ public class SongActivity extends AppCompatActivity {
      * @param toDegreeBackVisible   the degree the image will be sliding TO when back is visible. ( when back is visible the starting degree will be 180 and end point 360,
      *                              or -180 & -360 depending on direction of sliding);
      */
-    private void changeImageAndBackground(boolean isBackVisible, Bitmap newAlbumCover, int degreeScrolled, float fromDegree, float toDegreeFrontVisible, float toDegreeBackVisible){
+    private void slideImageOnClick(boolean isBackVisible, Bitmap newAlbumCover, int degreeScrolled, float fromDegree, float toDegreeFrontVisible, float toDegreeBackVisible){
         if (!isBackVisible) {
             backBlurImageView.setAlpha(1f);
             backAlbumImageView.setImageBitmap(newAlbumCover);
-            setNewBlurredBitmap(backBlurImageView, newAlbumCover);
-
-            fadeBackground(frontBlurImageView, 1f, 0f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, true);
+            
             animations.slideAndFadeImageView(frontAlbumImageView, backAlbumImageView, fromDegree, toDegreeFrontVisible);
 
             this.fromDegreeButton = toDegreeFrontVisible;
-            this.isBackVisible = true;
+            this.isAlbumBackVisible = true;
         } else {
             frontBlurImageView.setAlpha(1f);
             frontAlbumImageView.setImageBitmap(newAlbumCover);
-            setNewBlurredBitmap(frontBlurImageView, newAlbumCover);
-
-            fadeBackground(backBlurImageView, 1f, 0f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, true);
+            
             if(fromDegree == degreeScrolled) {
                 animations.slideAndFadeImageView(backAlbumImageView, frontAlbumImageView, fromDegree, 0);
             } else {
@@ -301,7 +292,7 @@ public class SongActivity extends AppCompatActivity {
             }
 
             this.fromDegreeButton = 0;
-            this.isBackVisible = false;
+            this.isAlbumBackVisible = false;
         }
     }
 
@@ -330,6 +321,8 @@ public class SongActivity extends AppCompatActivity {
                 ArrayList<Song> listOfSongs = musicStorage.loadAudio();
                 Song nextSong = listOfSongs.get(musicStorage.loadAudioIndex() + 1);
                 Bitmap nextAlbumCover = converter.getAlbumCoverFromMusicFile(nextSong.getAlbumCoverPath());
+                
+                changeBackgroundOnClick(nextAlbumCover);
 
                 changeImageAndBackgroundOnButtonPress(nextAlbumCover);
                 EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_NEXT));
@@ -355,11 +348,11 @@ public class SongActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 nextSong = false;
-
                 ArrayList<Song> listOfSongs = musicStorage.loadAudio();
                 Song previousSong = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
                 Bitmap previousAlbumCover = converter.getAlbumCoverFromMusicFile(previousSong.getAlbumCoverPath());
 
+                changeBackgroundOnClick(previousAlbumCover);
                 changeImageAndBackgroundOnButtonPress(previousAlbumCover);
                 EventBus.getDefault().post(new SkipSongEvent(MediaPlayerService.SKIP_TO_PREVIOUS));
                 seekBar.setProgress(0);
@@ -391,7 +384,6 @@ public class SongActivity extends AppCompatActivity {
         });
     }
 
-
     /**
      * used to fade in particular views, when starting the activity
      */
@@ -406,68 +398,30 @@ public class SongActivity extends AppCompatActivity {
         animations.fadeAnimation(mainView, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
     }
 
-    /**
-     * used to fade backgroundView
-     * @param fadeOutView background that has to be faded out
-     * @param fromAlpha transparency the background is starting from
-     * @param toAlpha transparency the background has to fade out, or in, to
-     * @param duration duration of the animations
-     * @param animationListener boolean that checks if there is need of an animationListener, set true when user releases screen.
-     */
-    private void fadeBackground(ImageView fadeOutView, float fromAlpha, float toAlpha, int duration, boolean animationListener){
-        ObjectAnimator fadeOut = ObjectAnimator.ofFloat(fadeOutView, "alpha", fromAlpha, toAlpha);
-        fadeOut.setDuration(duration);
 
-        if(animationListener){
-            fadeOut.addListener(animatorListener(fadeOutView));
+    private void changeBackgroundOnClick(Bitmap newAlbumCover){
+        Drawable oldBackground = new BitmapDrawable(getResources(), oldBlurredAlbumCover);
+
+        Bitmap newBlurredBackground = BlurBitmap.blur(this, newAlbumCover);
+        Drawable newBackground = new BitmapDrawable(getResources(), newBlurredBackground);
+
+        Drawable backgrounds[] = new Drawable[2];
+        backgrounds[0] = oldBackground;
+        backgrounds[1] = newBackground;
+
+        TransitionDrawable crossfader = new TransitionDrawable(backgrounds);
+
+        if(!backgroundSwitched) {
+            frontBlurImageView.setImageDrawable(crossfader);
+        } else {
+
+            backBlurImageView.setImageDrawable(crossfader);
         }
 
-        fadeOut.start();
+        crossfader.startTransition(400);
+        oldBlurredAlbumCover = newBlurredBackground;
     }
 
-    /**
-     * animatorListener used when user releases screen, used to listen for the end of the animation so that when animation ends and, for example
-     * frontView has faded out, the backView will be put on top and therefore be visible to the user.
-     * @param fadeOutView view that is getting faded out
-     * @return the animatorListener
-     */
-    private Animator.AnimatorListener animatorListener(final ImageView fadeOutView){
-        return new Animator.AnimatorListener() {
-
-            @Override
-            public void onAnimationStart(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animator) {
-                setBackgroundOnTop(fadeOutView);
-            }
-
-
-            @Override
-            public void onAnimationCancel(Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animator) {
-
-            }
-        };
-    }
-
-    /**
-     * used to set the new background on top, when frontView gets faded out the backView has to be on top. otherwise the frontView will still be on top and back will not be shown
-     * @param fadingView View that is getting faded out, opposite view has to be put on top to be visible.
-     */
-    private void setBackgroundOnTop(ImageView fadingView){
-        if(fadingView == frontBlurImageView){
-            backBlurImageView.bringToFront();
-        } else if(fadingView == backBlurImageView) {
-            frontBlurImageView.bringToFront();
-        }
-    }
 
     private void setFromDegree(float fromDegree){
         if(fromDegree >= 360 || fromDegree <= -360){
@@ -510,11 +464,13 @@ public class SongActivity extends AppCompatActivity {
         private boolean goneOver90Degree = false;
         private boolean pastThreshold = false;
         private boolean beforeThreshold = false;
-        private boolean setNewImage = false;
+        private boolean setNewAlbumImage = false;
+        private boolean setNewBackground = false;
         private boolean isReleasing = false;
         private boolean hasScrolled = false;
-        private boolean animateAllOnRelease = false;
+        private boolean lastSongInList = false;
 
+        private Bitmap nextAlbumImageBlurred;
         private Song nextSong;
 
         private ArrayList<Song> listOfSongs;
@@ -566,29 +522,35 @@ public class SongActivity extends AppCompatActivity {
 
                             int nextIndex = musicStorage.loadAudioIndex() - 1;
 
-                            if(nextIndex >=0 && nextIndex < listOfSongs.size()) {
-                                animateAllOnRelease = true;
-                                if (!setNewImage) {
-                                    nextSong = listOfSongs.get(nextIndex);
-                                }
-
-                                    if (!isBackVisible) {
-                                        setNewImages(backAlbumImageView, backBlurImageView, nextSong);
-                                        slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
-                                        fadeBackground(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                        fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
-                                    } else {
-                                        setNewImages(frontAlbumImageView, frontBlurImageView, nextSong);
-                                        slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackLeft, toDegreeBackLeft, IMAGE_VIEW_SCROLL_DURATION, false);
-                                        fadeBackground(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                        fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
-                                    }
-                            } else {
-                                animateAllOnRelease = false;
-                                if(!isBackVisible){
+                            if (nextIndex < 0 || nextIndex >= listOfSongs.size()) {
+                                lastSongInList = true;
+                                if(!isAlbumBackVisible){
                                     slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
                                 } else {
                                     slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
+                                }
+                            } else {
+                                lastSongInList = false;
+                                if (!setNewAlbumImage) {
+                                    nextSong = listOfSongs.get(nextIndex);
+                                }
+
+                                if (!isAlbumBackVisible) {
+                                    setNewAlbumImage(backAlbumImageView, nextSong);
+                                    slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
+                                    fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
+                                } else {
+                                    setNewAlbumImage(frontAlbumImageView, nextSong);
+                                    slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackLeft, toDegreeBackLeft, IMAGE_VIEW_SCROLL_DURATION, false);
+                                    fadeImagesAtThreshold(LEFT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
+                                }
+
+                                if(!backgroundSwitched) {
+                                    setNewBackgroundImage(backBlurImageView, nextSong);
+                                    fadeBackgroundOnScroll(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
+                                } else {
+                                    setNewBackgroundImage(frontBlurImageView, nextSong);
+                                    fadeBackgroundOnScroll(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
                                 }
                             }
 
@@ -614,28 +576,34 @@ public class SongActivity extends AppCompatActivity {
 
                             int nextIndex = musicStorage.loadAudioIndex() + 1;
 
-                            if(nextIndex >=0 && nextIndex < listOfSongs.size()){
-                                animateAllOnRelease = true;
-                                if(!setNewImage) {
-                                    nextSong = listOfSongs.get(nextIndex);
-                                }
-                                    if (!isBackVisible) {
-                                        setNewImages(backAlbumImageView, backBlurImageView, nextSong);
-                                        slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
-                                        fadeBackground(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                        fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
-                                    } else {
-                                        setNewImages(frontAlbumImageView, frontBlurImageView, nextSong);
-                                        slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackRight, toDegreeBackRight, IMAGE_VIEW_SCROLL_DURATION, false);
-                                        fadeBackground(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
-                                        fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
-                                }
-                            } else {
-                                animateAllOnRelease = false;
-                                if(!isBackVisible){
+                            if (nextIndex < 0 || nextIndex >= listOfSongs.size()) {
+                                lastSongInList = true;
+                                if(!isAlbumBackVisible){
                                     slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
                                 } else {
                                     slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
+                                }
+                            } else {
+                                lastSongInList = false;
+                                if(!setNewAlbumImage) {
+                                    nextSong = listOfSongs.get(nextIndex);
+                                }
+                                if (!isAlbumBackVisible) {
+                                    setNewAlbumImage(backAlbumImageView, nextSong);
+                                    slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling, IMAGE_VIEW_SCROLL_DURATION, false);
+                                    fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, frontAlbumImageView, backAlbumImageView);
+                                } else {
+                                    setNewAlbumImage(frontAlbumImageView, nextSong);
+                                    slideImageView(backAlbumImageView, frontAlbumImageView, fromDegreeBackRight, toDegreeBackRight, IMAGE_VIEW_SCROLL_DURATION, false);
+                                    fadeImagesAtThreshold(RIGHT_SCROLL_THRESHOLD, backAlbumImageView, frontAlbumImageView);
+                                }
+
+                                if(!backgroundSwitched) {
+                                    setNewBackgroundImage(backBlurImageView, nextSong);
+                                    fadeBackgroundOnScroll(frontBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
+                                } else {
+                                    setNewBackgroundImage(frontBlurImageView, nextSong);
+                                    fadeBackgroundOnScroll(backBlurImageView, fromAlpha, toAlpha, FADE_OUT_BACKGROUND_ON_SCROLL_DURATION, false);
                                 }
                             }
 
@@ -650,18 +618,6 @@ public class SongActivity extends AppCompatActivity {
             return gestureDetector.onTouchEvent(motionEvent);
         }
 
-        /**
-         * Used to change the album image of next or previous song, also used to change the background which is based of the same album picture
-         * @param imageView the imageView on which the new Bitmap will be set
-         * @param background    the backgroundView on which the new Bitmap will be set
-         * @param song the song which the album picture has to be retrieved
-         */
-        private void changeAlbumPictureBasedOn(ImageView imageView, ImageView background, Song song){
-            Bitmap nextAlbumImage = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
-            Bitmap blurredAlbumImage = BlurBitmap.blur(SongActivity.this, nextAlbumImage);
-            imageView.setImageBitmap(nextAlbumImage);
-            background.setImageBitmap(blurredAlbumImage);
-        }
 
         /**
          * Set of animations to fade front imageView out and back imageView in when degreeScrolled gets over 90 degrees
@@ -679,8 +635,8 @@ public class SongActivity extends AppCompatActivity {
         private void onReleaseScreen(){
             //animates only the imageView, nothing else. gets used when user is at last song in the list, so that user cannot scroll to new album image, since there is none.
             //fromDegreeScrolling gets divided by 6 so that user cant scroll enough anymore to scroll past 90 degrees.
-            if(!animateAllOnRelease){
-                if(!isBackVisible) {
+            if(lastSongInList){
+                if(!isAlbumBackVisible) {
                     slideImageOnRelease(fromDegreeScrolling / 6, 0);
                 } else {
                     if(scrollingRight) {
@@ -691,23 +647,26 @@ public class SongActivity extends AppCompatActivity {
                 }
             } else {
                 if (scrollingRight) {
-                    if (!isBackVisible) {
+                    if (!isAlbumBackVisible) {
                         slideImageOnRelease(RIGHT_SCROLL_THRESHOLD, fromDegreeScrolling, 0, 180);
-                        fadeBackgroundOnRelease(frontBlurImageView);
                     } else {
                         slideImageOnRelease(RIGHT_SCROLL_THRESHOLD, fromDegreeBackRight, 180, 360);
-                        fadeBackgroundOnRelease(backBlurImageView);
                     }
                 } else {
-                    if (!isBackVisible) {
+                    if (!isAlbumBackVisible) {
                         slideImageOnRelease(LEFT_SCROLL_THRESHOLD, fromDegreeScrolling, 0, -180);
-                        fadeBackgroundOnRelease(frontBlurImageView);
                     } else {
                         slideImageOnRelease(LEFT_SCROLL_THRESHOLD, fromDegreeBackLeft, -180, -360);
-                        fadeBackgroundOnRelease(backBlurImageView);
                     }
                 }
 
+                if(!backgroundSwitched){
+                    fadeBackgroundOnRelease(frontBlurImageView);
+                } else {
+                    fadeBackgroundOnRelease(backBlurImageView);
+                }
+
+                oldBlurredAlbumCover = nextAlbumImageBlurred;
                 goneOver90Degree = false;
             }
         }
@@ -734,11 +693,10 @@ public class SongActivity extends AppCompatActivity {
                 slideImageView(frontAlbumImageView, backAlbumImageView, fromDegree, degreeBeforeThreshold, IMAGE_VIEW_ON_RELEASE_DURATION, true);
             } else if(pastThreshold){
                 changePlayButtonState();
-                isBackVisible = !isBackVisible;
+                isAlbumBackVisible = !isAlbumBackVisible;
+                backgroundSwitched = !backgroundSwitched;
 
                 slideImageView(frontAlbumImageView, backAlbumImageView, fromDegree, degreePastThreshold, IMAGE_VIEW_ON_RELEASE_DURATION, true);
-
-
 
                 if(threshold == RIGHT_SCROLL_THRESHOLD){
                     setFromDegree(fromDegreeButton + 180);
@@ -800,6 +758,57 @@ public class SongActivity extends AppCompatActivity {
         }
 
         /**
+         * used to fade backgroundView
+         * @param fadeOutView background that has to be faded out
+         * @param fromAlpha transparency the background is starting from
+         * @param toAlpha transparency the background has to fade out, or in, to
+         * @param duration duration of the animations
+         * @param animationListener boolean that checks if there is need of an animationListener, set true when user releases screen.
+         */
+        private void fadeBackgroundOnScroll(ImageView fadeOutView, float fromAlpha, float toAlpha, int duration, boolean animationListener){
+            ObjectAnimator fadeOut = ObjectAnimator.ofFloat(fadeOutView, "alpha", fromAlpha, toAlpha);
+            fadeOut.setDuration(duration);
+
+            if(animationListener){
+                fadeOut.addListener(animatorListener(fadeOutView));
+            }
+
+            fadeOut.start();
+        }
+
+        /**
+         * animatorListener used when user releases screen, used to listen for the end of the animation so that when animation ends and, for example
+         * frontView has faded out, the backView will be put on top and therefore be visible to the user.
+         * @param fadeOutView view that is getting faded out
+         * @return the animatorListener
+         */
+        private Animator.AnimatorListener animatorListener(final ImageView fadeOutView){
+            return new Animator.AnimatorListener() {
+
+                @Override
+                public void onAnimationStart(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    setBackgroundOnTop(fadeOutView);
+                }
+
+
+                @Override
+                public void onAnimationCancel(Animator animator) {
+
+                }
+
+                @Override
+                public void onAnimationRepeat(Animator animator) {
+
+                }
+            };
+        }
+
+        /**
          * used to fade background when user releases screen. fades back to 1f if degreeScrolled is lower than 90 and fades to 0f is higher than 90 degrees scrolled
          * revealing the new background underneath.
          * @param fadingView background that will be faded
@@ -809,10 +818,11 @@ public class SongActivity extends AppCompatActivity {
             boolean beforeThreshold = getBeforeThreshold();
 
             if(beforeThreshold){
-                fadeBackground(fadingView, fromAlpha, 1f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, false);
+                fadeBackgroundOnScroll(fadingView, fromAlpha, 1f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, false);
             } else if(pastThreshold){
-                fadeBackground(fadingView, fromAlpha, 0f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, true);
-                setNewImage = false;
+                fadeBackgroundOnScroll(fadingView, fromAlpha, 0f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, true);
+                setNewAlbumImage = false;
+                setNewBackground = false;
             }
         }
 
@@ -861,19 +871,51 @@ public class SongActivity extends AppCompatActivity {
             this.beforeThreshold = beforeThreshold;
         }
 
+//        /**
+//         *
+//         * @param albumImageBack the back side of the album imageView, the non visible side
+//         * @param previouslyFadedView the previous imageView that was faded out, used to set transparency back to 1f again after it has been faded out.
+//         *                            this happens after the new view has faded in and set in front of the previouslyFadedView. otherwise the previouslyFadedView
+//         *                            in the back stays transparent
+//         * @param song the song which the album picture has to be retrieved
+//         */
+//        private void setNewImages(ImageView albumImageBack, ImageView previouslyFadedView, Song song){
+//            if(!setNewAlbumImage) {
+//                previouslyFadedView.setAlpha(1f);
+//                changeAlbumPictureBasedOn(albumImageBack, previouslyFadedView, song);
+//                setNewAlbumImage = true;
+//            }
+//        }
+
         /**
-         *
-         * @param albumImageBack the back side of the album imageView, the non visible side
-         * @param previouslyFadedView the previous imageView that was faded out, used to set transparency back to 1f again after it has been faded out.
-         *                            this happens after the new view has faded in and set in front of the previouslyFadedView. otherwise the previouslyFadedView
-         *                            in the back stays transparent
-         * @param song the song which the album picture has to be retrieved
+         * used to set the new background on top, when frontView gets faded out the backView has to be on top. otherwise the frontView will still be on top and back will not be shown
+         * @param fadingView View that is getting faded out, opposite view has to be put on top to be visible.
          */
-        private void setNewImages(ImageView albumImageBack, ImageView previouslyFadedView, Song song){
-            if(!setNewImage) {
-                previouslyFadedView.setAlpha(1f);
-                changeAlbumPictureBasedOn(albumImageBack, previouslyFadedView, song);
-                setNewImage = true;
+        private void setBackgroundOnTop(ImageView fadingView){
+            if(fadingView == frontBlurImageView){
+                backBlurImageView.bringToFront();
+            } else if(fadingView == backBlurImageView) {
+                frontBlurImageView.bringToFront();
+            }
+        }
+
+        private void setNewAlbumImage(ImageView albumImageView, Song song){
+            if(!setNewAlbumImage){
+                Bitmap albumImage = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+                albumImageView.setImageBitmap(albumImage);
+
+                setNewAlbumImage = true;
+            }
+        }
+
+        private void setNewBackgroundImage(ImageView background, Song song){
+            if(!setNewBackground){
+                background.setAlpha(1f);
+                Bitmap albumImage = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+                nextAlbumImageBlurred = BlurBitmap.blur(SongActivity.this, albumImage);
+                background.setImageBitmap(nextAlbumImageBlurred);
+
+                setNewBackground = true;
             }
         }
 

@@ -63,9 +63,10 @@ public class MainActivity extends AppCompatActivity {
     private static final int FADE_OUT_BACKGROUND_DURATION = 400;
     private static final int FADE_IN_BACKGROUND_DURATION = 400;
 
+    private int currentPositionSong;
+
     private Boolean serviceBound = false;
     private Boolean isAlbumBackVisible = false;
-    private Boolean isBackgroundBackVisible = false;
     private Boolean statePlaying = false;
 
     public Song lastPlayedSong = null;
@@ -85,7 +86,6 @@ public class MainActivity extends AppCompatActivity {
     public TextView songTitleView, songArtistView;
     public RelativeLayout mainView;
 
-
     private Toolbar toolbar;
     private ViewPager container;
     private TabLayout tabs;
@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
     private ImageView backgroundImage;
     private Bitmap OldBlurredAlbumCover;
     private TabLayout tabLayout;
-    private RelativeLayout viewHolder;
 
     //TODO FIX WARNINGS
 
@@ -219,7 +218,6 @@ public class MainActivity extends AppCompatActivity {
         currentlyPlayingTab = findViewById(R.id.include_play_tab);
         appBar = findViewById(R.id.appbar);
         mainView = findViewById(R.id.main_view);
-        viewHolder = findViewById(R.id.view_holder_main_activity);
         backgroundImage = findViewById(R.id.background_image);
         playButton = findViewById(R.id.play_pause_button);
         nextSongButton = findViewById(R.id.next_song_button);
@@ -276,11 +274,11 @@ public class MainActivity extends AppCompatActivity {
                 songIntent.putExtra("songName", currentSong.getSongName());
                 songIntent.putExtra("songArtist", currentSong.getArtist());
                 songIntent.putExtra("songDuration", currentSong.getDuration());
+                songIntent.putExtra("currentPositionSong", currentPositionSong);
                 startActivity(songIntent);
             }
         });
     }
-
 
     private void changeAlbumCoverPicture(Bitmap newAlbumCover){
         //Currently_playing_song_tab has a FrameLayout containing back and front side of an ImageView ( actually two ImageViews in FrameLayout ) back shows first in app.
@@ -456,6 +454,7 @@ public class MainActivity extends AppCompatActivity {
         setNewSongDescriptionAnimation(song);
         initializeProgressBar(duration, albumCoverColor);
 
+
         if(!statePlaying){
             changePlayButtonStateToPause();
         }
@@ -466,8 +465,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void onEvent(ProgressUpdateEvent progressUpdateEvent) {
-        int currentPosition = progressUpdateEvent.getCurrentPosition();
-        audioProgressBar.setProgress(currentPosition);
+        currentPositionSong = progressUpdateEvent.getCurrentPosition();
+        audioProgressBar.setProgress(currentPositionSong);
     }
 }
 

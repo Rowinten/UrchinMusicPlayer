@@ -1,12 +1,10 @@
 package com.example.rowin.urchinmusicplayer.fragment;
 
-import android.app.Dialog;
 import android.content.res.ColorStateList;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.widget.AppCompatImageButton;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -28,7 +26,6 @@ import com.example.rowin.urchinmusicplayer.model.Globals;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.SortingOptionDialogMenu;
 import com.example.rowin.urchinmusicplayer.util.HidingScrollListener;
 import com.example.rowin.urchinmusicplayer.util.TextWatcherSorter;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
@@ -83,15 +80,16 @@ public class SongListFragment extends Fragment{
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onStart() {
+        super.onStart();
 
         EventBus.getDefault().register(this);
     }
 
+
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onStop() {
+        super.onStop();
 
         EventBus.getDefault().unregister(this);
     }
@@ -227,6 +225,8 @@ public class SongListFragment extends Fragment{
     public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
         int newPosition = sendSongDetailsEvent.getSongIndex();
         int color = sendSongDetailsEvent.getSongAlbumColor();
+
+        Log.d("SSSS", "KRAMERBOORDERLIJN");
 
         changeSelectedTab(newPosition, color);
         fab.setBackgroundTintList(ColorStateList.valueOf(color));

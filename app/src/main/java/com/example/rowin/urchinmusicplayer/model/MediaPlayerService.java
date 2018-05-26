@@ -378,7 +378,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
             initAndPrepareMediaPlayer();
             sendSongToActivity(listOfSongs.get(songIndex));
-            //sendSongProgressToActivity();
         }
     }
 
