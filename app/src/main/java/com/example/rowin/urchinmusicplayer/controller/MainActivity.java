@@ -112,7 +112,6 @@ public class MainActivity extends AppCompatActivity {
 
         windowUtils.setWindowMetrics(getWindow(), toolbar, currentlyPlayingTab);
 
-
         EventBus.getDefault().register(this);
 
         playButtonOnClick();
@@ -235,9 +234,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent songIntent = new Intent(MainActivity.this, SongActivity.class);
-
                 int[] screenLocation = new int[2];
                 backAlbumCoverView.getLocationOnScreen(screenLocation);
+
+                if(currentlyPlayingSong == null){
+                    currentlyPlayingSong = musicStorage.getCurrentlyPlayingSong();
+                }
 
                 songIntent.putExtra("yCoordinates", screenLocation[1]);
                 songIntent.putExtra("albumImagePath", currentlyPlayingSong.getAlbumCoverPath());

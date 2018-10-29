@@ -62,8 +62,9 @@ public class AlbumRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
     private class ViewHolder extends RecyclerView.ViewHolder{
 
         private ConstraintLayout parentCardView;
-        private ImageView albumImageHolder;
-        private TextView albumTitleHolder;
+        private CardView albumImageHolder;
+        private ImageView albumImageView;
+        private TextView albumTitleHolder, albumArtistHolder;
 
         ViewHolder(View itemView) {
             super(itemView);
@@ -71,10 +72,13 @@ public class AlbumRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             parentCardView = itemView.findViewById(R.id.album_card_view);
             albumImageHolder = itemView.findViewById(R.id.album_image_grid_view);
             albumTitleHolder = itemView.findViewById(R.id.album_title_textview);
+            albumImageView = itemView.findViewById(R.id.album_image_view_activity);
+            albumArtistHolder = itemView.findViewById(R.id.album_artist_title_view);
         }
 
         void bind(final Album album){
             String albumName = album.getName();
+            String albumArtist = album.getArtist();
             String albumImagePath = album.getPath();
             Bitmap albumImage = converter.getAlbumCoverFromPath(albumImagePath);
 
@@ -89,8 +93,9 @@ public class AlbumRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             setMarginsCardView(marginCard);
             setXYCardView(widthCard, heightCard);
 
-            albumImageHolder.setImageBitmap(albumImage);
+            albumImageView.setImageBitmap(albumImage);
             albumTitleHolder.setText(albumName);
+            albumArtistHolder.setText(albumArtist);
 
             parentCardView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -110,8 +115,8 @@ public class AlbumRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
 
         //Sets width as percentage of the total width of the screen
         void setXYCardView(int widthCard, int heightCard){
-            GridLayoutManager.LayoutParams layoutParams = (GridLayoutManager.LayoutParams)
-                    parentCardView.getLayoutParams();
+            ConstraintLayout.LayoutParams layoutParams = (ConstraintLayout.LayoutParams)
+                    albumImageHolder.getLayoutParams();
 
             layoutParams.width = widthCard;
             layoutParams.height = heightCard;
