@@ -1,4 +1,4 @@
-package com.example.rowin.urchinmusicplayer.util;
+package com.example.rowin.urchinmusicplayer.view.listener;
 
 import android.content.Context;
 import android.support.constraint.ConstraintLayout;
@@ -15,16 +15,11 @@ import android.widget.OverScroller;
  */
 
 public abstract class ScrollGestureListener extends GestureDetector.SimpleOnGestureListener{
-    private static final int SWIPE_THRESHOLD = 100;
-    private static final int SWIPE_VELOCITY_THRESHOLD = 4000;
-    public static final int SWIPE_TO_LEFT = 0;
-    public static final int SWIPE_TO_RIGHT = 1;
 
     //@AmountPixForDegree, amount of pixels needed to scroll one degree
     //@AmountPixForAlpha, amount pixels needed to scroll to change alpha with 0.01f
     private int amountPixForDegree;
     private int amountPixForAlpha;
-    private float swipeVelocity;
 
     protected ScrollGestureListener(View view){
         amountPixForDegree = (int) ((view.getWidth() / 1.5 ) / 180);
@@ -73,31 +68,6 @@ public abstract class ScrollGestureListener extends GestureDetector.SimpleOnGest
         return super.onScroll(e1, e2, distanceX, distanceY);
     }
 
-//
-//    @Override
-//    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-//        boolean result = false;
-//
-//        float diffY = e2.getY() - e1.getY();
-//        float diffX = e2.getX() - e1.getX();
-//        swipeVelocity = Math.abs(velocityX);
-//
-//        //If diffX > diffY = user is swiping horizontally.
-//        if (Math.abs(diffX) > Math.abs(diffY)) {
-//            //Determines how many pixels user has to swipe before it is counted as a "Fling", also the velocity ( how fast ) the user flings is taken into account.
-//            if (Math.abs(diffX) > SWIPE_THRESHOLD && swipeVelocity > SWIPE_VELOCITY_THRESHOLD) {
-//                //if user swaps right to left, X value will be bigger than 0, if user swipes left to right value will be smaller than 0;
-//                if (diffX > 0) {
-//                    onRightFling();
-//                } else {
-//                    onLeftFling();
-//                }
-//                result = true;
-//            }
-//        }
-//
-//        return result;
-//    }
 
     public abstract void onLeftScroll(float toDegreeFront, float toDegreeBackLeft, float toAlpha, float degreeScrolled);
 

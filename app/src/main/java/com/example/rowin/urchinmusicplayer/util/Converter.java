@@ -20,7 +20,7 @@ public class Converter {
      * @param filePath path of the song where the album cover needs to be returned
      * @return the bitmap of the decoded filePath
      */
-    public Bitmap getAlbumCoverFromMusicFile(String filePath){
+    public Bitmap getAlbumCoverFromPath(String filePath){
         File image = new File(filePath);
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
 

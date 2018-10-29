@@ -1,22 +1,15 @@
-package com.example.rowin.urchinmusicplayer.util;
+package com.example.rowin.urchinmusicplayer.model;
 
+import android.annotation.SuppressLint;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.MediaStore;
-import android.renderscript.ScriptGroup;
-import android.util.Log;
 import android.widget.Toast;
 
-import com.example.rowin.urchinmusicplayer.model.Song;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Rowin on 2/22/2018.
@@ -24,15 +17,24 @@ import java.util.ArrayList;
 
 public class SongManager {
     private Context context;
-    private ArrayList<Song> listOfSongs = new ArrayList<>();
 
+    @SuppressLint("UseSparseArrays")
+    private HashMap<String, Song> artistSongList = new HashMap<>();
+
+    private ArrayList<Song> listOfSongs = new ArrayList<>();
+    private ArrayList<Album> listOfAlbums = new ArrayList<>();
+
+    private ArrayList<Song> albumSongList = new ArrayList<>();
+
+    private Long previousAlbumId = null;
 
     public SongManager(Context context){
         this.context = context;
     }
 
     //Retrieve all songs
-    public ArrayList<Song> getSongsFromMusicDirectory() {
+    public void getSongsFromMusicDirectory() {
+        int counter = 0;
         ContentResolver cr = context.getContentResolver();
         Uri musicDirectory = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
 
@@ -43,6 +45,7 @@ public class SongManager {
         }
         while (cursor != null && cursor.moveToNext()) {
 
+            int id = counter;
             String displayName = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE));
             String artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST));
             String songAlbum = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM));
@@ -51,7 +54,6 @@ public class SongManager {
             String songPath = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DATA));
             String albumCoverPath = null;
 
-
             Cursor cursorAlbum = context.getContentResolver().query(MediaStore.Audio.Albums.EXTERNAL_CONTENT_URI,
                     new String[]{MediaStore.Audio.Albums._ID, MediaStore.Audio.Albums.ALBUM_ART}, MediaStore.Audio.Albums._ID + "=" + albumId, null, null);
 
@@ -59,20 +61,63 @@ public class SongManager {
                 albumCoverPath = cursorAlbum.getString(cursorAlbum.getColumnIndex(MediaStore.Audio.Albums.ALBUM_ART));
             }
 
-            listOfSongs.add(createSongObject(songAlbum, artist, songDuration, displayName, albumCoverPath, songPath));
-            assert cursorAlbum != null;
+            Song song = createSongObject(id, albumId, artist, songDuration, displayName, albumCoverPath, songPath);
+
+            //Adds new album object to the album list only when a new albumId is spotted.
+            if(previousAlbumId == null){
+                Album album = createAlbumObject(albumId, artist, songAlbum, albumCoverPath);
+                listOfAlbums.add(album);
+            }  else if(!previousAlbumId.equals(albumId)){
+                Album album = createAlbumObject(albumId, artist, songAlbum, albumCoverPath);
+                listOfAlbums.add(album);
+            }
+
+            artistSongList.put(artist, song);
+            listOfSongs.add(song);
+
+            counter++;
+            previousAlbumId = albumId;
             cursorAlbum.close();
         }
 
+        setSongList(listOfSongs);
+        setAlbumList(listOfAlbums);
+
         cursor.close();
 
+    }
+
+    public void setSongList(ArrayList<Song> listOfSongs){
+        this.listOfSongs = listOfSongs;
+    }
+
+    public ArrayList<Song> getSongList(){
         return listOfSongs;
     }
 
+    public void setAlbumList(ArrayList<Album> listOfAlbums){
+        this.listOfAlbums = listOfAlbums;
+    }
 
-    private Song createSongObject(String songAlbum, String artist, Long songDuration, String displayName, String albumCoverPath, String songPath){
+    public ArrayList<Album> getAlbumList(){
+        return listOfAlbums;
+    }
+
+
+    private Album createAlbumObject(Long id, String artist, String songAlbum, String albumCoverPath){
+        Album album = new Album();
+        album.setId(id);
+        album.setName(songAlbum);
+        album.setArtist(artist);
+        album.setPath(albumCoverPath);
+
+        return album;
+    }
+
+    private Song createSongObject(int id, Long albumId, String artist, Long songDuration, String displayName, String albumCoverPath, String songPath){
         Song song = new Song();
-        song.setAlbum(songAlbum);
+        song.setId(id);
+        song.setAlbumId(albumId);
         song.setArtist(artist);
         song.setDuration(songDuration);
         song.setSongName(displayName);

@@ -15,16 +15,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-
-            <!--<View-->
-                <!--android:id="@+id/appbar_background_image"-->
-                <!--android:background="@color/currentlyPlayingTabColor"-->
-                <!--android:layout_width="match_parent"-->
-                <!--android:layout_height="match_parent"-->
-                <!--android:layout_alignBottom="@+id/include_play_tab"-->
-                <!--android:layout_alignParentStart="true" />-->
-
-
             <android.support.v7.widget.Toolbar
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
@@ -47,9 +37,34 @@
 
             </android.support.v7.widget.Toolbar>
 
-            <include
-                android:id="@+id/include_play_tab"
-                layout="@layout/currently_playing_song_tab" />
+            <android.support.design.widget.TabLayout
+                android:id="@+id/tabs"
+                android:layout_below="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorPrimary"
+                app:tabIndicatorHeight="0dp">
+
+                <android.support.design.widget.TabItem
+                android:id="@+id/tabItem"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+                <android.support.design.widget.TabItem
+                android:id="@+id/tabItem2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+                <android.support.design.widget.TabItem
+                android:id="@+id/tabItem3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+            </android.support.design.widget.TabLayout>
+
+            <!--<include-->
+                <!--android:id="@+id/include_play_tab"-->
+                <!--layout="@layout/currently_playing_song_tab" />-->
 
         </RelativeLayout>
 

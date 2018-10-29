@@ -2,10 +2,12 @@ package com.example.rowin.urchinmusicplayer.util;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.Point;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.TabLayout;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -50,12 +52,34 @@ public class WindowUtils {
         return result;
     }
 
-    public float getCenterScreenX(View view){
-        return context.getResources().getDisplayMetrics().widthPixels / 2 - getMarginConstraintView(view);
+    public int getScreenWidth(){
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager != null) {
+            Display display = windowManager.getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+
+            return size.x;
+        }
+
+        return 0;
     }
 
-    public float getCenterScreenY(){
-        return context.getResources().getDisplayMetrics().heightPixels / 2;
+    public int getScreenHeight(){
+        WindowManager windowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (windowManager != null) {
+            Display display = windowManager.getDefaultDisplay();
+            Point size = new Point();
+            display.getSize(size);
+
+            return size.y;
+        }
+
+        return 0;
+    }
+
+    public float getCenterScreenX(){
+        return context.getResources().getDisplayMetrics().widthPixels / 2;
     }
 
     private float getMarginConstraintView(View view){
@@ -63,15 +87,6 @@ public class WindowUtils {
         return convertDpToPx(lp.leftMargin);
     }
 
-    public void setMarginConstraintView(View view){
-        ConstraintLayout.LayoutParams lp = (ConstraintLayout.LayoutParams) view.getLayoutParams();
-        lp.setMargins(0,0,0,getNavigationBarHeight());
-    }
-
-
-    public void setWindowMetrics(Window window){
-        window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-    }
 
     public void setWindowMetrics(Window window, View toolbar, View tabs){
         window.setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS, WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);

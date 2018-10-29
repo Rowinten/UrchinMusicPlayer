@@ -1,12 +1,7 @@
 package com.example.rowin.urchinmusicplayer.model;
 
-import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 
 /**
  * Created by Rowin on 2/23/2018.
@@ -14,25 +9,16 @@ import java.util.ArrayList;
 
 public class Song implements Parcelable{
 
+    private int id;
+    private Long albumId;
     private String songPath;
     private String songName;
     private Long duration;
-    private String album;
     private String artist;
     private String albumCoverPath;
-    private byte[] rawByteArray;
 
     public Song(){
 
-    }
-
-    private Song(Parcel in) {
-        songPath = in.readString();
-        songName = in.readString();
-        duration = in.readLong();
-        album = in.readString();
-        artist = in.readString();
-        albumCoverPath = in.readString();
     }
 
     public static final Creator<Song> CREATOR = new Creator<Song>() {
@@ -47,6 +33,16 @@ public class Song implements Parcelable{
         }
     };
 
+    private Song(Parcel in) {
+        setId(in.readInt());
+        setAlbumId(in.readLong());
+        setSongPath(in.readString());
+        setSongName(in.readString());
+        setDuration(in.readLong());
+        setArtist(in.readString());
+        setAlbumCoverPath(in.readString());
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -54,67 +50,65 @@ public class Song implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeInt(id);
+        parcel.writeLong(albumId);
         parcel.writeString(songPath);
         parcel.writeString(songName);
         parcel.writeLong(duration);
-        parcel.writeString(album);
         parcel.writeString(artist);
         parcel.writeString(albumCoverPath);
     }
 
-    public String getSongPath() {
-        return songPath;
+    public int getId() {
+        return id;
     }
 
-    public void setSongPath(String songPath) {
-        this.songPath = songPath;
+    public Long getAlbumId(){ return albumId;}
+
+    public String getSongPath() {
+        return songPath;
     }
 
     public String getSongName() {
         return songName;
     }
 
-    public void setSongName(String songName) {
-        this.songName = songName;
-    }
-
     public Long getDuration() {
         return duration;
-    }
-
-    public void setDuration(Long duration) {
-        this.duration = duration;
-    }
-
-    public String getAlbum() {
-        return album;
-    }
-
-    public void setAlbum(String album) {
-        this.album = album;
     }
 
     public String getArtist() {
         return artist;
     }
 
-    public void setArtist(String artist) {
-        this.artist = artist;
-    }
-
     public String getAlbumCoverPath() {
         return albumCoverPath;
     }
 
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setAlbumId(Long albumId){ this.albumId = albumId;}
+
+    public void setSongPath(String songPath) {
+        this.songPath = songPath;
+    }
+
+    public void setSongName(String songName) {
+        this.songName = songName;
+    }
+
+    public void setDuration(Long duration) {
+        this.duration = duration;
+    }
+
+    public void setArtist(String artist) {
+        this.artist = artist;
+    }
+
     public void setAlbumCoverPath(String albumCoverPath) {
         this.albumCoverPath = albumCoverPath;
-    }
-
-    public byte[] getRawByteArray() {
-        return rawByteArray;
-    }
-
-    public void setRawByteArray(byte[] rawByteArray) {
-        this.rawByteArray = rawByteArray;
     }
 }

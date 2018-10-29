@@ -1,13 +1,7 @@
 package com.example.rowin.urchinmusicplayer.util;
 
 import android.content.Context;
-import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
 
-import com.example.rowin.urchinmusicplayer.R;
-import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
-import com.example.rowin.urchinmusicplayer.model.Globals;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 
@@ -72,6 +66,24 @@ public class SortingOptions {
         return listOfSongs;
     }
 
+    ArrayList<Song> getReversedSortedListZtoA(ArrayList<Song> listOfSongs){
+        ArrayList<Song> sortedList = getSortedListAtoZ(listOfSongs);
+        Collections.reverse(sortedList);
+        return sortedList;
+    }
+
+    ArrayList<Song> getReversedSortedListArtist(ArrayList<Song> listOfSongs){
+        ArrayList<Song> sortedList = getSortedListArtist(listOfSongs);
+        Collections.reverse(sortedList);
+        return sortedList;
+    }
+
+    ArrayList<Song> getReversedSortedListDuration(ArrayList<Song> listOfSongs){
+        ArrayList<Song> sortedList = getSortedListDuration(listOfSongs);
+        Collections.reverse(sortedList);
+        return sortedList;
+    }
+
     ArrayList<Song> reverseList(ArrayList<Song> listOfSongs){
         Collections.reverse(listOfSongs);
         return listOfSongs;
@@ -91,5 +103,7 @@ public class SortingOptions {
             return listOfSongs;
         }
     }
+
+
 
 }

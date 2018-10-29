@@ -1,4 +1,4 @@
-package com.example.rowin.urchinmusicplayer.util;
+package com.example.rowin.urchinmusicplayer.view.listener;
 
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;

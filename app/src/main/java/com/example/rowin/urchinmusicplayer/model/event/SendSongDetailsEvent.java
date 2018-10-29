@@ -1,4 +1,4 @@
-package com.example.rowin.urchinmusicplayer.events;
+package com.example.rowin.urchinmusicplayer.model.event;
 
 import com.example.rowin.urchinmusicplayer.model.Song;
 

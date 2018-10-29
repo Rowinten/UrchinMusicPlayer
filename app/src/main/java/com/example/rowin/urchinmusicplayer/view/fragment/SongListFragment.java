@@ -1,5 +1,6 @@
-package com.example.rowin.urchinmusicplayer.fragment;
+package com.example.rowin.urchinmusicplayer.view.fragment;
 
+import android.app.Dialog;
 import android.content.res.ColorStateList;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -7,27 +8,23 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.AppCompatImageButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.EditText;
-import android.widget.ImageView;
 
 import com.example.rowin.urchinmusicplayer.R;
-import com.example.rowin.urchinmusicplayer.activity.MainActivity;
-import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
-import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
-import com.example.rowin.urchinmusicplayer.events.ShuffleEvent;
-import com.example.rowin.urchinmusicplayer.model.Globals;
+import com.example.rowin.urchinmusicplayer.controller.MainActivity;
+import com.example.rowin.urchinmusicplayer.view.adapter.SongRecyclerViewAdapter;
+import com.example.rowin.urchinmusicplayer.model.event.SendSongDetailsEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ShuffleEvent;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
-import com.example.rowin.urchinmusicplayer.util.HidingScrollListener;
-import com.example.rowin.urchinmusicplayer.util.TextWatcherSorter;
+import com.example.rowin.urchinmusicplayer.view.listener.HidingScrollListener;
+import com.example.rowin.urchinmusicplayer.util.SortingOptionDialogMenu;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 
 import java.util.ArrayList;
@@ -40,13 +37,11 @@ import de.greenrobot.event.EventBus;
 
 //TODO RecyclerView overlaps with the currently_playing_tab_view
 public class SongListFragment extends Fragment{
-    public RecyclerViewAdapter recyclerViewAdapter;
+    public SongRecyclerViewAdapter recyclerViewAdapter;
 
     private RecyclerView songListRecyclerView;
+    private RecyclerView.LayoutManager layoutManager;
 
-    //private CardView filterBarView;
-    private EditText searchSongEditText;
-    private ImageView filterButton;
     private AppCompatImageButton fab;
 
     private MusicStorage musicStorage;
@@ -69,12 +64,6 @@ public class SongListFragment extends Fragment{
         initializeClasses();
         initializeRecyclerView();
         registerShuffleButtonClickListener();
-
-        //filterEditTextClickListener();
-        //initializeFilterMenu();
-        TextWatcherSorter textWatcherSorter = new TextWatcherSorter(getContext(), songListRecyclerView);
-        textWatcherSorter.setCurrentHighlightedSong(musicStorage.loadAudio().get(musicStorage.loadAudioIndex()));
-        //searchSongEditText.addTextChangedListener(textWatcherSorter);
 
         return view;
     }
@@ -101,14 +90,7 @@ public class SongListFragment extends Fragment{
 
     private void initializeViews(View view){
         songListRecyclerView = view.findViewById(R.id.songRecyclerView);
-        searchSongEditText = view.findViewById(R.id.search_song_view);
-        //filterBarView = view.findViewById(R.id.filter_bar_view);
-        searchSongEditText = view.findViewById(R.id.search_song_view);
         fab = view.findViewById(R.id.fab_shuffle_button);
-
-        Globals.getInstance().setSearchSongEditText(searchSongEditText);
-
-        filterButton = view.findViewById(R.id.filter_button);
     }
 
     private void initializeClasses(){
@@ -118,36 +100,29 @@ public class SongListFragment extends Fragment{
     }
 
     private void initializeRecyclerView(){
-        ArrayList<Song> listOfSongs = musicStorage.loadAudio();
-        RecyclerViewAdapter recyclerViewAdapter = getRecyclerViewAdapter(listOfSongs);
-
-        Globals.getInstance().initRecyclerView(songListRecyclerView);
+        ArrayList<Song> listOfSongs = getArguments().getParcelableArrayList("listOfSongs");
+        SongRecyclerViewAdapter recyclerViewAdapter = getRecyclerViewAdapter(listOfSongs);
 
         songListRecyclerView.setAdapter(recyclerViewAdapter);
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
+        layoutManager = new LinearLayoutManager(getActivity());
         songListRecyclerView.setLayoutManager(layoutManager);
         songListRecyclerView.addOnScrollListener(new HidingScrollListener() {
             @Override
             public void onHide() {
                 int margin = 32;
-                //int totalHeightSearchBar = filterBarView.getHeight() + margin;
                 int totalHeightFab = fab.getHeight() +margin;
-
-                //Log.d("d", String.valueOf(filterBarView.getHeight()));
-                //filterBarView.animate().translationY(-totalHeightSearchBar).setInterpolator(new AccelerateInterpolator(2));
                 fab.animate().translationY(totalHeightFab).setInterpolator(new AccelerateInterpolator(2));
             }
 
             @Override
             public void onShow() {
-                //filterBarView.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
                 fab.animate().translationY(0).setInterpolator(new DecelerateInterpolator(2));
             }
         });
 
         //Checks if a song has been played in the last session of the user, and styles the recyclerView based on that song (color from album picture and scroll
         //to the position of that song)
-        Integer lastPlayedSongIndex = ((MainActivity) getActivity()).lastPlayedSongIndex;
+        Integer lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex();
         if(lastPlayedSongIndex != null) {
             recyclerViewAdapter.setTextColor(getColorFromBundle());
             recyclerViewAdapter.setSelected(lastPlayedSongIndex);
@@ -155,23 +130,6 @@ public class SongListFragment extends Fragment{
             songListRecyclerView.scrollToPosition(lastPlayedSongIndex +1);
         }
     }
-
-//    private void initializeFilterMenu(){
-//        MainActivity mainActivity = ((MainActivity) getActivity());
-//        int positionY = windowUtils.getNavigationBarHeight()  + mainActivity.currentlyPlayingTab.getHeight() + 24;
-//        final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY);
-//
-//        filterButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                if(filterOptionDialog.isShowing()) {
-//                    filterOptionDialog.dismiss();
-//                } else {
-//                    filterOptionDialog.show();
-//                }
-//            }
-//        });
-//    }
 
     private void registerShuffleButtonClickListener(){
         fab.setOnClickListener(new View.OnClickListener() {
@@ -190,20 +148,37 @@ public class SongListFragment extends Fragment{
         });
     }
 
-    private RecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
-        recyclerViewAdapter =  new RecyclerViewAdapter(getContext(), listOfSongs, new RecyclerViewAdapter.OnItemClickListener() {
+    private SongRecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
+        recyclerViewAdapter =  new SongRecyclerViewAdapter(getContext(), songListRecyclerView, listOfSongs, new SongRecyclerViewAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(int position, Song song) {
                 ((MainActivity) getActivity()).playAudio(position);
-                ((MainActivity) getActivity()).audioProgressBar.setProgress(0);
-//                searchSongEditText.setCursorVisible(false);
                 windowUtils.hideSoftKeyboard(getActivity().getCurrentFocus());
+            }
+        }, new SongRecyclerViewAdapter.OnHeaderClickListener() {
+            @Override
+            public void onHeaderClick(int viewHeight) {
+                MainActivity mainActivity = ((MainActivity) getActivity());
+                int positionY = windowUtils.getNavigationBarHeight()  + mainActivity.currentlyPlayingTab.getHeight() + viewHeight;
+                final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY, new SortingOptionDialogMenu.OnSortListener() {
+                    @Override
+                    public void onSort(ArrayList<Song> filteredList, String filterType) {
+                        recyclerViewAdapter.changeDataSet(filteredList);
+                        recyclerViewAdapter.reinitializeTextWatcher(filterType);
+                    }
+                });
 
+                if(filterOptionDialog.isShowing()) {
+                    filterOptionDialog.dismiss();
+                } else {
+                    filterOptionDialog.show();
+                    }
             }
         });
 
         return recyclerViewAdapter;
     }
+
 
     private void changeSelectedTab(int position, int color){
         if(!recyclerViewAdapter.isSelected(position)){
@@ -212,21 +187,10 @@ public class SongListFragment extends Fragment{
         }
     }
 
-//    private void filterEditTextClickListener(){
-//        searchSongEditText.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                searchSongEditText.setCursorVisible(true);
-//            }
-//        });
-//    }
-
     //EventBus onEventListener, listens for an event send by EventBus with Event type SendSongDetailsEvent. Says it is not used, but it will be
     public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
         int newPosition = sendSongDetailsEvent.getSongIndex();
         int color = sendSongDetailsEvent.getSongAlbumColor();
-
-        Log.d("SSSS", "KRAMERBOORDERLIJN");
 
         changeSelectedTab(newPosition, color);
         fab.setBackgroundTintList(ColorStateList.valueOf(color));

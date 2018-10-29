@@ -5,13 +5,14 @@ import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 
-import com.example.rowin.urchinmusicplayer.adapter.RecyclerViewAdapter;
-import com.example.rowin.urchinmusicplayer.model.Globals;
+import com.example.rowin.urchinmusicplayer.view.adapter.SongRecyclerViewAdapter;
+import com.example.rowin.urchinmusicplayer.model.event.ListChangedEvent;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 
 import java.util.ArrayList;
-import java.util.Objects;
+
+import de.greenrobot.event.EventBus;
 
 /**
  * Created by Rowin on 3/27/2018.
@@ -22,14 +23,13 @@ public class TextWatcherSorter implements TextWatcher {
 
     private String filterType = null;
     private SortingOptions sortingOptions;
-    private Song highLightedSong;
-    private RecyclerViewAdapter recyclerViewAdapter;
+    private SongRecyclerViewAdapter recyclerViewAdapter;
 
     public TextWatcherSorter(Context context, RecyclerView recyclerView){
         sortingOptions = new SortingOptions(context);
         musicStorage = new MusicStorage(context);
 
-        recyclerViewAdapter = (RecyclerViewAdapter) recyclerView.getAdapter();
+        recyclerViewAdapter = (SongRecyclerViewAdapter) recyclerView.getAdapter();
     }
 
     @Override
@@ -42,45 +42,44 @@ public class TextWatcherSorter implements TextWatcher {
 
         if(filterType == null){
             musicStorage.storeAudio(queryResults);
-            correctSelectedSongHighlight(queryResults);
             recyclerViewAdapter.changeDataSet(queryResults);
         } else {
             switch (filterType) {
                 case SortingOptions.SORTED_NAME_A_Z:
                     ArrayList<Song> sortedListName = sortingOptions.getSortedListAtoZ(queryResults);
-                    correctSelectedSongHighlight(sortedListName);
                     recyclerViewAdapter.changeDataSet(sortedListName);
-                    musicStorage.storeAudio(sortedListName);
+                    EventBus.getDefault().post(new ListChangedEvent(sortedListName));
+                    //musicStorage.storeAudio(sortedListName);
                     break;
                 case SortingOptions.SORTED_NAME_Z_A:
-                    ArrayList<Song> reversedListName = sortingOptions.reverseList(queryResults);
-                    correctSelectedSongHighlight(reversedListName);
+                    ArrayList<Song> reversedListName = sortingOptions.getReversedSortedListZtoA(queryResults);
                     recyclerViewAdapter.changeDataSet(reversedListName);
-                    musicStorage.storeAudio(reversedListName);
+                    EventBus.getDefault().post(new ListChangedEvent(reversedListName));
+                    //musicStorage.storeAudio(reversedListName);
                     break;
                 case SortingOptions.SORTED_ARTIST_A_Z:
                     ArrayList<Song> sortedListArtist = sortingOptions.getSortedListArtist(queryResults);
-                    correctSelectedSongHighlight(sortedListArtist);
                     recyclerViewAdapter.changeDataSet(sortedListArtist);
-                    musicStorage.storeAudio(sortedListArtist);
+                    EventBus.getDefault().post(new ListChangedEvent(sortedListArtist));
+                    //musicStorage.storeAudio(sortedListArtist);
                     break;
                 case SortingOptions.SORTED_ARTIST_Z_A:
-                    ArrayList<Song> reversedListArtist = sortingOptions.reverseList(queryResults);
-                    correctSelectedSongHighlight(reversedListArtist);
+                    ArrayList<Song> reversedListArtist = sortingOptions.getReversedSortedListArtist(queryResults);
                     recyclerViewAdapter.changeDataSet(reversedListArtist);
-                    musicStorage.storeAudio(reversedListArtist);
+                    EventBus.getDefault().post(new ListChangedEvent(reversedListArtist));
+                    //musicStorage.storeAudio(reversedListArtist);
                     break;
                 case SortingOptions.SORTED_DURATION_0_9:
                     ArrayList<Song> sortedListDuration = sortingOptions.getSortedListDuration(queryResults);
-                    correctSelectedSongHighlight(sortedListDuration);
                     recyclerViewAdapter.changeDataSet(sortedListDuration);
-                    musicStorage.storeAudio(sortedListDuration);
+                    EventBus.getDefault().post(new ListChangedEvent(sortedListDuration));
+                    //musicStorage.storeAudio(sortedListDuration);
                     break;
                 case SortingOptions.SORTED_DURATION_9_0:
-                    ArrayList<Song> reversedListDuration = sortingOptions.reverseList(queryResults);
-                    correctSelectedSongHighlight(reversedListDuration);
+                    ArrayList<Song> reversedListDuration = sortingOptions.getReversedSortedListDuration(queryResults);
                     recyclerViewAdapter.changeDataSet(reversedListDuration);
-                    musicStorage.storeAudio(reversedListDuration);
+                    EventBus.getDefault().post(new ListChangedEvent(reversedListDuration));
+                    //musicStorage.storeAudio(reversedListDuration);
                     break;
             }
         }
@@ -91,24 +90,8 @@ public class TextWatcherSorter implements TextWatcher {
 
     }
 
-    void setFilterType(String filterType){
+    public void setFilterType(String filterType){
         this.filterType = filterType;
     }
 
-    public void setCurrentHighlightedSong(Song highlightedSong){
-        this.highLightedSong = highlightedSong;
-    }
-
-    //Makes sure that a song that is selected stays selected. for example, songs get highlighted based on index, if index changes ( and song shifts to another position )
-    //it makes sure that index 3 doesn't stay selected but the proper new index of the currently selected song does.
-    private void correctSelectedSongHighlight(ArrayList<Song> filteredList){
-        for(int i = 0; i < filteredList.size(); i++){
-            if(Objects.equals(highLightedSong.getSongName(), filteredList.get(i).getSongName())){
-                if(!recyclerViewAdapter.isSelected(i)){
-                    recyclerViewAdapter.setSelected(i);
-                    return;
-                }
-            }
-        }
-    }
 }

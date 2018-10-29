@@ -18,7 +18,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".activity.MainActivity">
+        <activity android:name=".controller.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -26,13 +26,18 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".activity.SongActivity"
+        <activity android:name=".controller.SongActivity"
             android:theme="@style/Theme.AppCompat.Translucent"/>
+
+        <activity android:name=".controller.AlbumSongsActivity"
+            android:theme="@style/Theme.AppCompat.Translucent"
+            android:windowSoftInputMode="stateHidden|adjustResize|adjustPan"
+            />
 
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
-        <service android:name=".model.MediaPlayerService" />
+        <service android:name=".controller.MediaPlayerService" />
     </application>
 
 </manifest>

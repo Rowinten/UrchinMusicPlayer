@@ -48,72 +48,12 @@ public class Animations {
                 .setDuration(duration);
     }
 
-    public void fadeBackgroundAnimation(final View fadeView, float fromAlpha, float toAlpha, int duration, final boolean fadeOut){
-        Animation fadeAnimation = new AlphaAnimation(fromAlpha, toAlpha);
-        fadeAnimation.setDuration(duration);
-
-        if(!fadeOut) {
-            fadeAnimation.setInterpolator(new DecelerateInterpolator());
-        } else {
-            fadeAnimation.setInterpolator(new AccelerateInterpolator());
-        }
-
-        fadeAnimation.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                if(!fadeOut){
-                    fadeView.setVisibility(View.VISIBLE);
-                } else {
-                    fadeView.setVisibility(View.INVISIBLE);
-                }
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-
-        fadeView.setAnimation(fadeAnimation);
-        fadeAnimation.start();
-    }
-
     public void verticalSlideAnimation(View frontView, View backView){
         setFrontOut.setTarget(frontView);
         setBackIn.setTarget(backView);
         setFrontOut.start();
         setBackIn.start();
     }
-
-    public void slideRightAnimation(View imageBack, View imageFront){
-        slideOutRight.setTarget(imageFront);
-        slideInRight.setTarget(imageBack);
-        slideOutRight.start();
-        slideInRight.start();
-    }
-
-    public void slideLeftAnimation(View imageBack, View imageFront){
-        slideOutLeft.setTarget(imageFront);
-        slideInLeft.setTarget(imageBack);
-        slideOutLeft.start();
-        slideInLeft.start();
-    }
-
-//    public void slideImageView(View targetFront, View targetBack, float fromDegree, float toDegree, int duration){
-//        ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
-//        flipFrontOut.setDuration(duration);
-//
-//        ObjectAnimator flipBackIn = ObjectAnimator.ofFloat(targetBack, "rotationY", fromDegree, toDegree);
-//        flipBackIn.setDuration(duration);
-//
-//        flipFrontOut.start();
-//        flipBackIn.start();
-//    }
 
     public void slideAndFadeImageView(View targetFront, View targetBack, float fromDegree, float toDegree){
         ObjectAnimator flipFrontOut = ObjectAnimator.ofFloat(targetFront, "rotationY", fromDegree, toDegree);
@@ -132,17 +72,6 @@ public class Animations {
         fadeInAnimator.start();
         flipFrontOut.start();
         flipBackIn.start();
-    }
-
-    //Object animators of the above four animations, which are done via an animator xml file
-    public ObjectAnimator slideFrontOut(View imageFront, float fromDegree, float toDegree){
-
-        return ObjectAnimator.ofFloat(imageFront, "rotationY", fromDegree, toDegree);
-    }
-
-    public ObjectAnimator slideBackIn(View imageBack, float fromDegree, float toDegree){
-        ObjectAnimator slideInAnimator = ObjectAnimator.ofFloat(imageBack, "rotationY", fromDegree, toDegree);
-        return slideInAnimator;
     }
 
     /**
@@ -202,26 +131,25 @@ public class Animations {
         startVectorDrawableAnimation(cancelToShuffleAnimation);
     }
 
-    public void albumImageScaleIncreaseAnimation(ImageView imageView, float toXDelta, float increaseXTimes){
+    public void albumImageScaleIncreaseAnimation(ImageView imageView, int fromY, int toY, float toXDelta, float increaseXTimes){
         AnimationSet animSet = new AnimationSet(true);
         animSet.setFillAfter(true);
-        animSet.setDuration(175);
-
+        animSet.setDuration(250);
 
         ScaleAnimation scale = new ScaleAnimation(1f, increaseXTimes, 1f, increaseXTimes, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, -0.05f);
         animSet.addAnimation(scale);
-        TranslateAnimation translate = new TranslateAnimation( 0, toXDelta , 0, 0);
+        TranslateAnimation translate = new TranslateAnimation( 0, toXDelta, fromY, toY);
         animSet.addAnimation(translate);
         imageView.startAnimation(animSet);
     }
 
-    public AnimationSet albumImageScaleDecreaseAnimationSet(float toXDelta){
+    public AnimationSet albumImageScaleDecreaseAnimationSet(float toXDelta, float decreaseXtimes, int fromY, int toY){
         AnimationSet animSet = new AnimationSet(true);
         animSet.setFillAfter(true);
         animSet.setDuration(175);
-        ScaleAnimation scale = new ScaleAnimation(6f, 1f, 6f, 1f,  Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0f);
+        ScaleAnimation scale = new ScaleAnimation(decreaseXtimes, 1f, decreaseXtimes, 1f,  Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0f);
         animSet.addAnimation(scale);
-        TranslateAnimation translate = new TranslateAnimation( toXDelta, 0 , 0, 0);
+        TranslateAnimation translate = new TranslateAnimation( toXDelta, 0 , fromY, toY);
         animSet.addAnimation(translate);
         return animSet;
     }

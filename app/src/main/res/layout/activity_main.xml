@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:id="@+id/main_view"
     android:fitsSystemWindows="true"
-    tools:context="com.example.rowin.urchinmusicplayer.activity.MainActivity">
+    tools:context="com.example.rowin.urchinmusicplayer.controller.MainActivity">
 
     <ImageView
         android:id="@+id/background_image"
@@ -36,37 +36,51 @@
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_above="@+id/tabs"
+            android:layout_above="@+id/include_play_tab"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginTop="0dp"
+            android:layout_marginEnd="0dp"
             android:background="@color/viewGroupColor"
             app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-        <android.support.design.widget.TabLayout
-            android:id="@+id/tabs"
+        <include
+            android:id="@+id/include_play_tab"
+            layout="@layout/currently_playing_song_tab"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="105dp"
             android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true"
-            android:background="@color/colorPrimary"
-            app:tabIndicatorHeight="0dp"
+            android:layout_alignParentStart="true"/>
 
-            >
+        <!--<android.support.design.widget.TabLayout-->
+            <!--android:id="@+id/tabs"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:layout_alignParentBottom="true"-->
+            <!--android:layout_alignParentStart="true"-->
+            <!--android:background="@color/colorPrimary"-->
+            <!--app:tabIndicatorHeight="0dp"-->
 
-            <android.support.design.widget.TabItem
-                android:id="@+id/tabItem"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+            <!--&gt;-->
 
-            <android.support.design.widget.TabItem
-                android:id="@+id/tabItem2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+            <!--<android.support.design.widget.TabItem-->
+                <!--android:id="@+id/tabItem"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content" />-->
 
-            <android.support.design.widget.TabItem
-                android:id="@+id/tabItem3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+            <!--<android.support.design.widget.TabItem-->
+                <!--android:id="@+id/tabItem2"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content" />-->
 
-        </android.support.design.widget.TabLayout>
+            <!--<android.support.design.widget.TabItem-->
+                <!--android:id="@+id/tabItem3"-->
+                <!--android:layout_width="wrap_content"-->
+                <!--android:layout_height="wrap_content" />-->
+
+        <!--</android.support.design.widget.TabLayout>-->
 
     </RelativeLayout>
 

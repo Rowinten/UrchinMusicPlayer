@@ -1,24 +1,24 @@
-package com.example.rowin.urchinmusicplayer.adapter;
+package com.example.rowin.urchinmusicplayer.view.adapter;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.widget.ImageView;
-import android.widget.TextView;
 
-import com.devs.vectorchildfinder.VectorChildFinder;
-import com.devs.vectorchildfinder.VectorDrawableCompat;
 import com.example.rowin.urchinmusicplayer.R;
-import com.example.rowin.urchinmusicplayer.fragment.AlbumFragment;
-import com.example.rowin.urchinmusicplayer.fragment.PlaylistFragment;
-import com.example.rowin.urchinmusicplayer.fragment.SongListFragment;
+import com.example.rowin.urchinmusicplayer.model.Album;
+import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.view.fragment.AlbumFragment;
+import com.example.rowin.urchinmusicplayer.view.fragment.PlaylistFragment;
+import com.example.rowin.urchinmusicplayer.view.fragment.SongListFragment;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
+
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Created by Rowin on 2/24/2018.
@@ -30,16 +30,20 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     private int iconColor;
 
     private int colorAccent;
+    private ArrayList<Song> listOfSongs;
+    private ArrayList<Album> listOfAlbums;
 
     private ColorReader colorReader;
 
-    public SectionsPagerAdapter(FragmentManager fm, Context context, int colorAccent) {
+    public SectionsPagerAdapter(FragmentManager fm, Context context, ArrayList<Song> listOfSongs, ArrayList<Album> listOfAlbums, int colorAccent) {
         super(fm);
         this.context = context;
         iconColor = context.getResources().getColor(R.color.colorAccent);
         colorReader = new ColorReader();
 
         this.colorAccent = colorAccent;
+        this.listOfSongs = listOfSongs;
+        this.listOfAlbums = listOfAlbums;
     }
 
     //Creates the layout for all the tabs
@@ -55,24 +59,6 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         ImageView playListTab = (ImageView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
         playListTab.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_playlist_tab_icon_unfocused));
         tabLayout.getTabAt(2).setCustomView(playListTab);
-
-//        TextView songTab = (TextView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
-//        songTab.setText(R.string.tab_text_1);
-//        songTab.setTextColor(context.getResources().getColor(R.color.tabTextColorSelected));
-//        songTab.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_song_tab_icon_focused, 0, 0);
-//        tabLayout.getTabAt(0).setCustomView(songTab);
-//
-//        TextView albumTab = (TextView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
-//        albumTab.setTextColor(context.getResources().getColor(R.color.tabTextColorUnselected));
-//        albumTab.setText(R.string.tab_text_2);
-//        albumTab.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_album_tab_icon_unfocused, 0, 0);
-//        tabLayout.getTabAt(1).setCustomView(albumTab);
-//
-//        TextView playlistTab = (TextView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
-//        playlistTab.setTextColor(context.getResources().getColor(R.color.tabTextColorUnselected));
-//        playlistTab.setText(R.string.tab_text_3);
-//        playlistTab.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_playlist_tab_icon_unfocused, 0, 0);
-//        tabLayout.getTabAt(2).setCustomView(playlistTab);
     }
 
     //Changes the layout from a tab to unselected layout
@@ -81,10 +67,6 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
             case 0:
                 ImageView songTabView = (ImageView) tab.getCustomView();
                 songTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_unfocused));
-
-//                TextView songTabView = (TextView) tab.getCustomView();
-//                songTabView.setTextColor(context.getResources().getColor(R.color.tabTextColorUnselected));
-//                songTabView.setCompoundDrawablesWithIntrinsicBounds(0, R.drawable.ic_song_tab_icon_unfocused, 0 , 0);
                 break;
             case 1:
                 ImageView albumTabView = (ImageView) tab.getCustomView();
@@ -102,16 +84,16 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         switch(index){
             case 0:
                 ImageView songTabView = (ImageView) tab.getCustomView();
-                colorReader.changeVectorColor(context, songTabView, "song_tab_icon_unfocused_path", iconColor);
+                colorReader.changeVectorColor(context, songTabView, R.drawable.ic_song_tab_icon_unfocused,"song_tab_icon_unfocused_path", iconColor);
                 break;
             case 1:
                 ImageView albumTabView = (ImageView) tab.getCustomView();
-                colorReader.changeVectorColor(context, albumTabView, "album_tab_icon_unfocused_path", iconColor);
+                colorReader.changeVectorColor(context, albumTabView, R.drawable.ic_album_tab_icon_unfocused,"album_tab_icon_unfocused_path", iconColor);
                 break;
             case 2:
                 ImageView playlistTabView = (ImageView) tab.getCustomView();
-                colorReader.changeVectorColor(context, playlistTabView, "playlist_tab_icon_unfocused_left_path", iconColor);
-                colorReader.changeVectorColor(context, playlistTabView, "playlist_tab_icon_unfocused_right_path", iconColor);
+                colorReader.changeVectorColor(context, playlistTabView, R.drawable.ic_playlist_tab_icon_unfocused,"playlist_tab_icon_unfocused_left_path", iconColor);
+                colorReader.changeVectorColor(context, playlistTabView, R.drawable.ic_playlist_tab_icon_unfocused,"playlist_tab_icon_unfocused_right_path", iconColor);
                 break;
         }
     }
@@ -123,13 +105,21 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         switch (position) {
             case 0:
                 SongListFragment songListFragment = new SongListFragment();
-                Bundle bundle = new Bundle();
-                bundle.putInt("colorAccent", colorAccent);
-                songListFragment.setArguments(bundle);
+                Bundle songBundle = new Bundle();
+                songBundle.putInt("colorAccent", colorAccent);
+                songBundle.putParcelableArrayList("listOfSongs", listOfSongs);
+                songListFragment.setArguments(songBundle);
 
                 return songListFragment;
             case 1:
-                return new AlbumFragment();
+                AlbumFragment albumFragment = new AlbumFragment();
+                Bundle albumBundle = new Bundle();
+                albumBundle.putInt("colorAccent", colorAccent);
+                albumBundle.putParcelableArrayList("listOfAlbums", listOfAlbums);
+                albumBundle.putParcelableArrayList("listOfSongs", listOfSongs);
+                albumFragment.setArguments(albumBundle);
+
+                return albumFragment;
             case 2:
                 return new PlaylistFragment();
             default:

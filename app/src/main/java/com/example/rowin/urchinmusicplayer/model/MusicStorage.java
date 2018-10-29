@@ -1,13 +1,18 @@
 package com.example.rowin.urchinmusicplayer.model;
 
 import android.content.Context;
+import android.content.ContextWrapper;
 import android.content.SharedPreferences;
-import android.net.Uri;
-import android.support.constraint.ConstraintLayout;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -44,11 +49,6 @@ public class MusicStorage {
 
     }
 
-    public Boolean isAudioLoaded(){
-        return loadAudio() != null;
-    }
-
-
     public void storeAudioIndex(int index){
         sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -63,7 +63,7 @@ public class MusicStorage {
         editor.apply();
     }
 
-    public String loadAudioName(){
+    private String loadAudioName(){
         sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         return sharedPreferences.getString("audioName", "DEFAULT");
     }
@@ -71,6 +71,48 @@ public class MusicStorage {
     public Integer loadAudioIndex(){
         sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         return sharedPreferences.getInt("audioIndex", -1);//return -1 if no data found
+    }
+
+    public Song getCurrentlyPlayingSong(){
+        return loadAudio().get(loadAudioIndex());
+    }
+
+    //Saves the background image to the applications' storage, so that the currently in use background will be saved and van be accessed
+    //When the user re-opens the app, bitmap will be overridden when a new background is set.
+    public void saveBitmapToStorage(Bitmap bitmap, Context context){
+        ContextWrapper cw = new ContextWrapper(context);
+        File directory = cw.getDir("last_background_used", Context.MODE_PRIVATE);
+
+        File myPath = new File(directory, "last_background_used.png");
+        if(myPath.exists()) myPath.delete();
+
+        try{
+            FileOutputStream fos = new FileOutputStream(myPath);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            fos.close();
+        } catch (Exception e){
+            Log.e("SAVE_IMAGE", e.getMessage(), e);
+        }
+    }
+
+    //Loads the last background bitmap used in the previous session of the user
+    public Bitmap loadBitmapFromStorage(Context context){
+        try{
+            ContextWrapper cw = new ContextWrapper(context);
+            File directory = cw.getDir("last_background_used", Context.MODE_PRIVATE);
+            File myPath = new File(directory, "last_background_used.png");
+
+            if(myPath.exists()){
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+
+                return BitmapFactory.decodeStream(new FileInputStream(myPath), null, options);
+            }
+        } catch (Exception e){
+            e.printStackTrace();
+            return null;
+        }
+        return null;
     }
 
 

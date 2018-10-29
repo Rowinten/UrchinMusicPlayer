@@ -1,4 +1,4 @@
-package com.example.rowin.urchinmusicplayer.activity;
+package com.example.rowin.urchinmusicplayer.controller;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -19,28 +19,29 @@ import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.example.rowin.urchinmusicplayer.R;
-import com.example.rowin.urchinmusicplayer.events.ChangeMediaPositionEvent;
-import com.example.rowin.urchinmusicplayer.events.ChangeMediaStateEvent;
-import com.example.rowin.urchinmusicplayer.events.ProgressUpdateEvent;
-import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
-import com.example.rowin.urchinmusicplayer.events.SkipSongEvent;
-import com.example.rowin.urchinmusicplayer.model.MediaPlayerService;
+import com.example.rowin.urchinmusicplayer.model.event.ChangeMediaPositionEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ChangeMediaStateEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ProgressUpdateEvent;
+import com.example.rowin.urchinmusicplayer.model.event.SendSongDetailsEvent;
+import com.example.rowin.urchinmusicplayer.model.event.SkipSongEvent;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
 import com.example.rowin.urchinmusicplayer.util.Animations;
 import com.example.rowin.urchinmusicplayer.util.BlurBitmap;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
 import com.example.rowin.urchinmusicplayer.util.Converter;
-import com.example.rowin.urchinmusicplayer.util.ScrollGestureListener;
+import com.example.rowin.urchinmusicplayer.view.listener.ScrollGestureListener;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 
 import java.util.ArrayList;
@@ -85,12 +86,16 @@ public class SongActivity extends AppCompatActivity {
     private ImageView backBlurImageView;
 
     private Bitmap oldBlurredAlbumCover;
+    private Bitmap currentBlurredAlbumCover;
 
     private boolean isPlaying;
     private boolean isAlbumBackVisible = false;
     private boolean nextSong = false;
     private boolean setFirstTime = true;
     private boolean backgroundSwitched = false;
+    private float amountTimesFit, toX;
+    private int toY, fromY;
+    private int yCoords;
 
     private float fromDegreeButton = 0;
 
@@ -128,11 +133,17 @@ public class SongActivity extends AppCompatActivity {
 
                 //Calculates the amount of times the imageView, that will be scaled, can fit inside its container. So that for all screen sizes the scaled view will fit
                 //inside the albumImageArea view.
-                float amountTimesFit = albumImageArea.getHeight() / frontAlbumImageView.getHeight();
+                amountTimesFit = albumImageArea.getHeight() / frontAlbumImageView.getHeight();
+                fromY = yCoords;
+                toY = appBar.getHeight();
+                toX = windowUtils.getCenterScreenX() - 16;
 
                 //Scales animation to the centerX of screen, and enlarges the imageView by amountTimesFit times minus a small proportion
-                animations.albumImageScaleIncreaseAnimation(frontAlbumImageView, windowUtils.getCenterScreenX(frontAlbumImageView), amountTimesFit - 0.5f);
-                animations.albumImageScaleIncreaseAnimation(backAlbumImageView, windowUtils.getCenterScreenX(backAlbumImageView), amountTimesFit - 0.5f);
+                backAlbumImageView.bringToFront();
+                frontAlbumImageView.bringToFront();
+
+                animations.albumImageScaleIncreaseAnimation(frontAlbumImageView, fromY, toY, toX, amountTimesFit - 0.5f);
+                animations.albumImageScaleIncreaseAnimation(backAlbumImageView, fromY, toY, toX , amountTimesFit - 0.5f);
                 blurImageViewContainer.setBackgroundColor(getResources().getColor(R.color.viewPagerTransparency));
             }
         });
@@ -158,7 +169,7 @@ public class SongActivity extends AppCompatActivity {
             decreaseView = backAlbumImageView;
         }
 
-        AnimationSet animationSet = animations.albumImageScaleDecreaseAnimationSet(windowUtils.getCenterScreenX(decreaseView));
+        AnimationSet animationSet = animations.albumImageScaleDecreaseAnimationSet(windowUtils.getCenterScreenX(), amountTimesFit, toY, fromY);
         animationSet.setAnimationListener(new Animation.AnimationListener() {
             @Override
             public void onAnimationStart(Animation animation) {
@@ -218,9 +229,15 @@ public class SongActivity extends AppCompatActivity {
         String songName = mainActivityIntent.getStringExtra("songName");
         String songArtist = mainActivityIntent.getStringExtra("songArtist");
         Long songDuration = mainActivityIntent.getLongExtra("songDuration", 0);
+        yCoords = mainActivityIntent.getIntExtra("yCoordinates", 0);
         int currentPositionSong = mainActivityIntent.getIntExtra("currentPositionSong", 0);
-        Bitmap albumBitmap = converter.getAlbumCoverFromMusicFile(pathToAlbumCover);
+        Bitmap albumBitmap = converter.getAlbumCoverFromPath(pathToAlbumCover);
         int albumColor = colorReader.getComplimentedColor(colorReader.getDominantColor(albumBitmap));
+
+        ConstraintLayout.LayoutParams layoutParams = new ConstraintLayout.LayoutParams(40, 40);
+        layoutParams.topMargin = yCoords - (appBar.getHeight() + 8);
+        frontAlbumImageView.setLayoutParams(layoutParams);
+        backAlbumImageView.setLayoutParams(layoutParams);
 
         initializeSeekBar(albumColor, songDuration.intValue());
         seekBar.setProgress(currentPositionSong);
@@ -320,7 +337,7 @@ public class SongActivity extends AppCompatActivity {
                 nextSong = true;
                 ArrayList<Song> listOfSongs = musicStorage.loadAudio();
                 Song nextSong = listOfSongs.get(musicStorage.loadAudioIndex() + 1);
-                Bitmap nextAlbumCover = converter.getAlbumCoverFromMusicFile(nextSong.getAlbumCoverPath());
+                Bitmap nextAlbumCover = converter.getAlbumCoverFromPath(nextSong.getAlbumCoverPath());
                 
                 changeBackgroundOnClick(nextAlbumCover);
 
@@ -350,7 +367,7 @@ public class SongActivity extends AppCompatActivity {
                 nextSong = false;
                 ArrayList<Song> listOfSongs = musicStorage.loadAudio();
                 Song previousSong = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
-                Bitmap previousAlbumCover = converter.getAlbumCoverFromMusicFile(previousSong.getAlbumCoverPath());
+                Bitmap previousAlbumCover = converter.getAlbumCoverFromPath(previousSong.getAlbumCoverPath());
 
                 changeBackgroundOnClick(previousAlbumCover);
                 changeImageAndBackgroundOnButtonPress(previousAlbumCover);
@@ -398,12 +415,14 @@ public class SongActivity extends AppCompatActivity {
         animations.fadeAnimation(mainView, FADE_OUT_ALPHA, FADE_OUT_ACTIVITY_VIEWS_DURATION);
     }
 
-
+    //TODO MAINACTIVITY AND SONGACTIVITY CHANGE BACKGROUND METHODS ARE DUPLICATE WITH SOME MINOR DIFFERENCES, FIX IT
     private void changeBackgroundOnClick(Bitmap newAlbumCover){
+        Log.d("Alpha: ", String.valueOf(frontBlurImageView.getAlpha()));
         Drawable oldBackground = new BitmapDrawable(getResources(), oldBlurredAlbumCover);
 
         Bitmap newBlurredBackground = BlurBitmap.blur(this, newAlbumCover);
         Drawable newBackground = new BitmapDrawable(getResources(), newBlurredBackground);
+        musicStorage.saveBitmapToStorage(newBlurredBackground, getApplicationContext());
 
         Drawable backgrounds[] = new Drawable[2];
         backgrounds[0] = oldBackground;
@@ -414,14 +433,12 @@ public class SongActivity extends AppCompatActivity {
         if(!backgroundSwitched) {
             frontBlurImageView.setImageDrawable(crossfader);
         } else {
-
             backBlurImageView.setImageDrawable(crossfader);
         }
 
         crossfader.startTransition(400);
         oldBlurredAlbumCover = newBlurredBackground;
     }
-
 
     private void setFromDegree(float fromDegree){
         if(fromDegree >= 360 || fromDegree <= -360){
@@ -445,10 +462,10 @@ public class SongActivity extends AppCompatActivity {
     }
 
     public void onEvent(ProgressUpdateEvent progressUpdateEvent){
-        int currentPosition = progressUpdateEvent.getCurrentPosition();
-        String roundedPositionValue = converter.convertToDuration((long) currentPosition);
-        seekBar.setProgress(currentPosition);
-        progressCounterView.setText(roundedPositionValue);
+//        int currentPosition = progressUpdateEvent.getCurrentPosition();
+//        String roundedPositionValue = converter.convertToDuration((long) currentPosition);
+//        seekBar.setProgress(currentPosition);
+//        progressCounterView.setText(roundedPositionValue);
     }
 
     private class ScrollingArea implements View.OnTouchListener {
@@ -661,9 +678,9 @@ public class SongActivity extends AppCompatActivity {
                 }
 
                 if(!backgroundSwitched){
-                    fadeBackgroundOnRelease(frontBlurImageView);
-                } else {
                     fadeBackgroundOnRelease(backBlurImageView);
+                } else {
+                    fadeBackgroundOnRelease(frontBlurImageView);
                 }
 
                 oldBlurredAlbumCover = nextAlbumImageBlurred;
@@ -818,9 +835,14 @@ public class SongActivity extends AppCompatActivity {
             boolean beforeThreshold = getBeforeThreshold();
 
             if(beforeThreshold){
-                fadeBackgroundOnScroll(fadingView, fromAlpha, 1f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, false);
+                if(!backgroundSwitched) {
+                    fadeBackgroundOnScroll(frontBlurImageView, fromAlpha, 1f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, false);
+                } else {
+                    fadeBackgroundOnScroll(backBlurImageView, fromAlpha, 1f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, false);
+                }
             } else if(pastThreshold){
                 fadeBackgroundOnScroll(fadingView, fromAlpha, 0f, FADE_OUT_BACKGROUND_ON_RELEASE_DURATION, true);
+                musicStorage.saveBitmapToStorage(nextAlbumImageBlurred, getApplicationContext());
                 setNewAlbumImage = false;
                 setNewBackground = false;
             }
@@ -901,7 +923,7 @@ public class SongActivity extends AppCompatActivity {
 
         private void setNewAlbumImage(ImageView albumImageView, Song song){
             if(!setNewAlbumImage){
-                Bitmap albumImage = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+                Bitmap albumImage = converter.getAlbumCoverFromPath(song.getAlbumCoverPath());
                 albumImageView.setImageBitmap(albumImage);
 
                 setNewAlbumImage = true;
@@ -911,7 +933,7 @@ public class SongActivity extends AppCompatActivity {
         private void setNewBackgroundImage(ImageView background, Song song){
             if(!setNewBackground){
                 background.setAlpha(1f);
-                Bitmap albumImage = converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath());
+                Bitmap albumImage = converter.getAlbumCoverFromPath(song.getAlbumCoverPath());
                 nextAlbumImageBlurred = BlurBitmap.blur(SongActivity.this, albumImage);
                 background.setImageBitmap(nextAlbumImageBlurred);
 
@@ -932,13 +954,13 @@ public class SongActivity extends AppCompatActivity {
 //                //Checks if nextButton has been pressed so that correct animation is played. (Next button = slide to right, Previous Button = slide to left )
 //                if(nextSong){
 //                    Song nextSong = listOfSongs.get(musicStorage.loadAudioIndex() + 1);
-//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromMusicFile(nextSong.getAlbumCoverPath());
+//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromPath(nextSong.getAlbumCoverPath());
 //                    backAlbumImageView.setImageBitmap(nextSongAlbumCover);
 //
 //                    animations.slideRightAnimation(backAlbumImageView, frontAlbumImageView);
 //                } else {
 //                    Song previousSong = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
-//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromMusicFile(previousSong.getAlbumCoverPath());
+//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromPath(previousSong.getAlbumCoverPath());
 //                    backAlbumImageView.setImageBitmap(nextSongAlbumCover);
 //
 //                    animations.slideLeftAnimation(backAlbumImageView, frontAlbumImageView);
@@ -949,13 +971,13 @@ public class SongActivity extends AppCompatActivity {
 //
 //                if(nextSong){
 //                    Song nextSong = listOfSongs.get(musicStorage.loadAudioIndex() + 1);
-//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromMusicFile(nextSong.getAlbumCoverPath());
+//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromPath(nextSong.getAlbumCoverPath());
 //                    frontAlbumImageView.setImageBitmap(nextSongAlbumCover);
 //
 //                    animations.slideRightAnimation(frontAlbumImageView, backAlbumImageView);
 //                } else {
 //                    Song previousSong = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
-//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromMusicFile(previousSong.getAlbumCoverPath());
+//                    Bitmap nextSongAlbumCover = converter.getAlbumCoverFromPath(previousSong.getAlbumCoverPath());
 //                    frontAlbumImageView.setImageBitmap(nextSongAlbumCover);
 //
 //                    animations.slideLeftAnimation(frontAlbumImageView, backAlbumImageView);

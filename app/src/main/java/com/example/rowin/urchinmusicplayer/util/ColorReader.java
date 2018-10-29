@@ -3,6 +3,7 @@ package com.example.rowin.urchinmusicplayer.util;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.util.Log;
 import android.widget.ImageView;
 
 import com.devs.vectorchildfinder.VectorChildFinder;
@@ -16,9 +17,10 @@ import com.example.rowin.urchinmusicplayer.R;
 //Reads certain type of color from a bitmap object
 public class ColorReader {
 
-    public void changeVectorColor(Context context, ImageView view, String vectorPath, int iconColor){
-        VectorChildFinder vector = new VectorChildFinder(context, R.drawable.ic_song_tab_icon_unfocused, view);
+    public void changeVectorColor(Context context, ImageView view, int resourceFile, String vectorPath, int iconColor){
+        VectorChildFinder vector = new VectorChildFinder(context, resourceFile, view);
         VectorDrawableCompat.VFullPath path = vector.findPathByName(vectorPath);
+
         path.setFillColor(iconColor);
         path.setStrokeColor(iconColor);
     }
@@ -60,6 +62,16 @@ public class ColorReader {
         return color;
     }
 
+    public double getLuminance(int color){
+        int red = Color.red(color);
+        int blue = Color.blue(color);
+        int green = Color.green(color);
+
+
+        //formula to detect luminance of a given color
+        return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    }
+
     public int getComplimentedColor(int color) {
         // get existing colors
         int alpha = Color.alpha(color);
@@ -69,7 +81,7 @@ public class ColorReader {
 
 
         //formula to detect luminance of a given color
-        double luma = 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+        double luma = getLuminance(color);
 
 
         //Checks if luminance = lower than 40 ( too dark ) or higher than 220 ( too light )

@@ -1,4 +1,4 @@
-package com.example.rowin.urchinmusicplayer.model;
+package com.example.rowin.urchinmusicplayer.controller;
 
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -15,15 +15,17 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
-import com.example.rowin.urchinmusicplayer.events.ChangeMediaPositionEvent;
-import com.example.rowin.urchinmusicplayer.events.ChangeMediaStateEvent;
-import com.example.rowin.urchinmusicplayer.events.PlaySongEvent;
-import com.example.rowin.urchinmusicplayer.events.ProgressUpdateEvent;
-import com.example.rowin.urchinmusicplayer.events.SendSongDetailsEvent;
-import com.example.rowin.urchinmusicplayer.events.ShuffleEvent;
-import com.example.rowin.urchinmusicplayer.events.SkipSongEvent;
+import com.example.rowin.urchinmusicplayer.model.MusicStorage;
+import com.example.rowin.urchinmusicplayer.model.Song;
+import com.example.rowin.urchinmusicplayer.model.event.ChangeMediaPositionEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ChangeMediaStateEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ListChangedEvent;
+import com.example.rowin.urchinmusicplayer.model.event.PlaySongEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ProgressUpdateEvent;
+import com.example.rowin.urchinmusicplayer.model.event.SendSongDetailsEvent;
+import com.example.rowin.urchinmusicplayer.model.event.ShuffleEvent;
+import com.example.rowin.urchinmusicplayer.model.event.SkipSongEvent;
 import com.example.rowin.urchinmusicplayer.util.ColorReader;
 import com.example.rowin.urchinmusicplayer.util.Converter;
 
@@ -51,6 +53,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private ArrayList<Song> listOfSongs;
     private ArrayList<Song> shuffledSongList = new ArrayList<>();
     private Integer songIndex;
+    private int currentlyPlayingSongID;
 
     //When user clicks song, this is the beginning index the onCompletion listener references, so that when user doesn't select song, and listens to all songs in list
     //it ends again at this index. resets when user selects a new song.
@@ -71,8 +74,10 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     private boolean ongoingCall = false;
     private boolean isShuffled = false;
 
-    //TODO FIX PROGRESSBAR RECEIVER, STARTING NEW THREAD WHEN PLAYING NEW SONG TO FAST AFTER ANOTHER CRASHES THE APP OR CALLS ONCOMPLETE BECAUSE ERROR POPS
-
+    //TODO Songs have ids, when a list changes because of filter send event to service notifying the changes. service plays new list.
+    //TODO but service needs the new index in that list from where to start from, the song that is currently playing.
+    //TODO to get new index look for the id from that song in the list. make sure when song gets played to temp store the id as  a variable and change the value when song changes to another song.
+    //TODO start with creating onEvent in MediaPlayerService that watches for ListChangedEvent.
 
     @Nullable
     @Override
@@ -101,11 +106,12 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         listOfSongs = musicStorage.loadAudio();
         shuffledSongList.addAll(listOfSongs);
 
-        Song songToBePlayed = listOfSongs.get(songIndex);
+        Song currentSong = listOfSongs.get(songIndex);
+        currentlyPlayingSongID = currentSong.getId();
 
 
         if (songIndex != -1 && songIndex < listOfSongs.size()) {
-            mediaFile = songToBePlayed.getSongPath();
+            mediaFile = currentSong.getSongPath();
         } else {
             stopSelf();
         }
@@ -229,7 +235,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
 
     private void sendSongToActivity(Song song) {
-        int dominantColorAlbumCover = colorReader.getDominantColor(converter.getAlbumCoverFromMusicFile(song.getAlbumCoverPath()));
+        int dominantColorAlbumCover = colorReader.getDominantColor(converter.getAlbumCoverFromPath(song.getAlbumCoverPath()));
         int complimentedColor = colorReader.getComplimentedColor(dominantColorAlbumCover);
 
         EventBus.getDefault().post(new SendSongDetailsEvent(song.getDuration(), songIndex, complimentedColor, song));
@@ -341,6 +347,8 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         //Otherwise wrong audio gets played due to wrong indexes (shuffledSongList is getting smaller and indexes get incorrect in comparison to main list in return )
         songIndex = listOfSongs.indexOf(shufflePickedSong);
         mediaFile = listOfSongs.get(songIndex).getSongPath();
+
+
         musicStorage.storeAudioIndex(songIndex);
         musicStorage.storeAudioName(listOfSongs.get(songIndex).getSongName());
 
@@ -448,6 +456,16 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         return true;
     }
 
+    //gets new index of song from a filtered (and changed) list, so that when next song is played it does not use the index of the previous list.
+    private int getNewIndex(ArrayList<Song> listOfSongs) {
+        for(int i = 0; i < listOfSongs.size(); i++){
+            if(listOfSongs.get(i).getId() == currentlyPlayingSongID){
+                return i;
+            }
+        }
+        return 0;
+    }
+
     public void onEvent(ChangeMediaStateEvent changeMediaStateEvent){
         if(mediaPlayer.isPlaying()){
             pauseMedia();
@@ -461,11 +479,6 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     public void onEvent(PlaySongEvent playSongEvent){
         stopProgressUpdateEvent();
 
-        //Checks if the audioList has changed due to a filter being applied.
-        if(!areArraysIdentical(listOfSongs, musicStorage.loadAudio())){
-            listOfSongs = musicStorage.loadAudio();
-            resetShuffledSongList(listOfSongs);
-        }
         //Shuffled song list gets reset in both instances, because when user selects new song, all songs will be shuffled and played again.
         resetShuffledSongList(listOfSongs);
 
@@ -510,6 +523,11 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     public void onEvent(ChangeMediaPositionEvent changeMediaPositionEvent){
         int newPosition = changeMediaPositionEvent.getNewSongPosition();
         mediaPlayer.seekTo(newPosition);
+    }
+
+    public void onEvent(ListChangedEvent listChangedEvent){
+        listOfSongs = listChangedEvent.getChangedList();
+        songIndex = getNewIndex(listOfSongs);
     }
 
     public class LocalBinder extends Binder {

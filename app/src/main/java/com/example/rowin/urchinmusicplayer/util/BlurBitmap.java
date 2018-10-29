@@ -7,8 +7,6 @@ import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
 
-import static com.example.rowin.urchinmusicplayer.model.Globals.IMAGE_BLUR;
-
 /**
  * Created by Rowin on 4/23/2018.
  */
