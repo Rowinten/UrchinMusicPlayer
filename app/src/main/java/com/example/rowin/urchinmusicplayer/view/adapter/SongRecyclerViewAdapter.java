@@ -199,7 +199,7 @@ public class SongRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.V
             filterButton = itemView.findViewById(R.id.filter_button);
             searchInput = itemView.findViewById(R.id.search_song_edit_text);
 
-            textWatcherSorter = new TextWatcherSorter(context, recyclerView);
+            textWatcherSorter = new TextWatcherSorter(context, listOfSongs, recyclerView);
             searchInput.addTextChangedListener(textWatcherSorter);
 
             itemView.setOnClickListener(new View.OnClickListener() {

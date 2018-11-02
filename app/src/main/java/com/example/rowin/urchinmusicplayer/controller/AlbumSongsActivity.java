@@ -2,6 +2,7 @@ package com.example.rowin.urchinmusicplayer.controller;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -11,6 +12,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
@@ -35,6 +37,7 @@ import com.example.rowin.urchinmusicplayer.view.adapter.SongRecyclerViewAdapter;
 import java.util.ArrayList;
 
 import de.greenrobot.event.EventBus;
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class AlbumSongsActivity extends AppCompatActivity {
 
@@ -42,13 +45,19 @@ public class AlbumSongsActivity extends AppCompatActivity {
     private String albumName;
     private String albumArtist;
     private String albumImagePath;
+    private String currentSongName;
+    private String currentSongArtist;
+    private String currentSongImagePath;
 
     private RecyclerView recyclerView;
-    private ConstraintLayout backgroundView;
+    private ConstraintLayout backgroundView, currentlyPlayingTab;
     private ImageView albumImageHolder;
     private TextView albumNameView;
     private TextView albumArtistView;
+    private TextView currentSongNameView;
+    private TextView currentSongArtistView;
     private FrameLayout albumInfoHolder;
+    private CircleImageView frontAlbumImage, backAlbumImage;
 
     private Converter converter;
     private WindowUtils windowUtils;
@@ -59,17 +68,33 @@ public class AlbumSongsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         //EventBus.getDefault().register(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
+        getIntents(getIntent());
 
         setContentView(R.layout.album_songs_activity);
         initializeViews();
         initializeClasses();
 
         adjustLayoutParams();
-        getIntents(getIntent());
 
         Bitmap background = musicStorage.loadBitmapFromStorage(this);
-        Drawable drawableBackground = new BitmapDrawable(getResources(), background);
-        backgroundView.setBackground(drawableBackground);
+        if(background != null){
+            Drawable drawableBackground = new BitmapDrawable(getResources(), background);
+            backgroundView.setBackground(drawableBackground);
+
+
+        } else {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                int color = getResources().getColor(R.color.colorPrimaryDark, getTheme());
+                backgroundView.setBackgroundColor(color);
+                currentlyPlayingTab.setBackgroundColor(getResources().getColor(R.color.colorPrimary, getTheme()));
+
+            } else {
+                int color = getResources().getColor(R.color.colorPrimaryDark);
+                backgroundView.setBackgroundColor(color);
+                currentlyPlayingTab.setBackgroundColor(getResources().getColor(R.color.colorPrimary));
+            }
+        }
+
         albumImageHolder.setImageBitmap(getAlbumImage());
         albumInfoHolder.bringToFront();
         albumArtistView.setText(albumArtist);
@@ -77,6 +102,7 @@ public class AlbumSongsActivity extends AppCompatActivity {
 
         startActivityAnimation();
         initializeRecyclerView();
+        initializeCurrentSongTab();
     }
 
     @Override
@@ -117,12 +143,32 @@ public class AlbumSongsActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.album_activity_recycler_view);
         albumInfoHolder = findViewById(R.id.album_info_holder);
         backgroundView = findViewById(R.id.album_song_background_view);
+        currentlyPlayingTab = findViewById(R.id.currently_playing_song_tab_album_activity);
+        frontAlbumImage = findViewById(R.id.front_album_cover_view);
+        backAlbumImage = findViewById(R.id.back_album_cover_view);
+        currentSongNameView = findViewById(R.id.song_title_view_currently_playing_tab);
+        currentSongArtistView = findViewById(R.id.song_band_name_view_currently_playing_tab);
     }
 
     private void initializeClasses(){
         converter = new Converter();
         windowUtils = new WindowUtils(this);
         musicStorage = new MusicStorage(this);
+    }
+
+    private void initializeCurrentSongTab(){
+        if(currentSongImagePath != null) {
+            Bitmap imageBitmap = converter.getAlbumCoverFromPath(currentSongImagePath);
+            frontAlbumImage.setImageBitmap(imageBitmap);
+        }
+
+        if(currentSongName != null) {
+            currentSongNameView.setText(currentSongName);
+        }
+
+        if(currentSongArtist !=  null) {
+            currentSongArtistView.setText(currentSongArtist);
+        }
     }
 
     private void initializeRecyclerView(){
@@ -146,7 +192,8 @@ public class AlbumSongsActivity extends AppCompatActivity {
 
     private void adjustLayoutParams(){
         albumInfoHolder.getLayoutParams().height = (int) Math.round((windowUtils.getScreenHeight() * 0.35) + windowUtils.getStatusBarHeight());
-        recyclerView.setPadding(0, 0, 0, windowUtils.getNavigationBarHeight());
+        currentlyPlayingTab.setBackgroundColor(getResources().getColor(R.color.currentlyPlayingTabTransparency));
+        currentlyPlayingTab.setPadding(0, 0, 0, windowUtils.getNavigationBarHeight());
     }
 
     private void getIntents(Intent intent){
@@ -154,6 +201,10 @@ public class AlbumSongsActivity extends AppCompatActivity {
         albumImagePath = intent.getStringExtra("albumBitmapPath");
         albumName = intent.getStringExtra("albumTitle");
         albumArtist = intent.getStringExtra("albumArtist");
+
+        currentSongName = intent.getStringExtra("currentSongName");
+        currentSongArtist = intent.getStringExtra("currentSongArtist");
+        currentSongImagePath = intent.getStringExtra("currentSongImagePath");
     }
 
     private void startActivityAnimation(){

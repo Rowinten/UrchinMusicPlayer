@@ -25,8 +25,8 @@ public class TextWatcherSorter implements TextWatcher {
     private SortingOptions sortingOptions;
     private SongRecyclerViewAdapter recyclerViewAdapter;
 
-    public TextWatcherSorter(Context context, RecyclerView recyclerView){
-        sortingOptions = new SortingOptions(context);
+    public TextWatcherSorter(Context context, ArrayList<Song> listOfSongs, RecyclerView recyclerView){
+        sortingOptions = new SortingOptions(context, listOfSongs);
         musicStorage = new MusicStorage(context);
 
         recyclerViewAdapter = (SongRecyclerViewAdapter) recyclerView.getAdapter();
@@ -41,7 +41,7 @@ public class TextWatcherSorter implements TextWatcher {
         ArrayList<Song> queryResults = sortingOptions.getFilteredListOnTextInput(charSequence.toString());
 
         if(filterType == null){
-            musicStorage.storeAudio(queryResults);
+            //musicStorage.storeAudio(queryResults);
             recyclerViewAdapter.changeDataSet(queryResults);
         } else {
             switch (filterType) {

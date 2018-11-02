@@ -18,6 +18,7 @@ import android.view.animation.ScaleAnimation;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.controller.AlbumSongsActivity;
+import com.example.rowin.urchinmusicplayer.controller.MainActivity;
 import com.example.rowin.urchinmusicplayer.model.Album;
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
@@ -27,6 +28,7 @@ import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 import com.example.rowin.urchinmusicplayer.view.adapter.AlbumRecyclerViewAdapter;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import de.greenrobot.event.EventBus;
 
@@ -39,7 +41,7 @@ public class AlbumFragment extends Fragment {
     private ArrayList<Album> albumList = new ArrayList<>();
     private ArrayList<Song> listOfSongs = new ArrayList<>();
 
-    private MusicStorage musicStorage;
+    private Song currentlyPlayingSong;
 
     private RecyclerView albumRecyclerView;
     private View albumImageView;
@@ -54,6 +56,7 @@ public class AlbumFragment extends Fragment {
         if (bundle != null) {
             albumList = bundle.getParcelableArrayList("listOfAlbums");
             listOfSongs = bundle.getParcelableArrayList("listOfSongs");
+            currentlyPlayingSong = bundle.getParcelable("currentSong");
         }
 
         return view;
@@ -63,6 +66,7 @@ public class AlbumFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        currentlyPlayingSong = ((MainActivity)Objects.requireNonNull(getActivity())).currentlyPlayingSong;
         initializeRecyclerView();
     }
 
@@ -96,6 +100,13 @@ public class AlbumFragment extends Fragment {
 
     private void openAlbum(Album album,  ArrayList<Song> albumSongs){
         Intent songIntent = new Intent(getContext(), AlbumSongsActivity.class);
+
+        if(currentlyPlayingSong != null){
+            songIntent.putExtra("currentSongName", currentlyPlayingSong.getSongName());
+            songIntent.putExtra("currentSongArtist", currentlyPlayingSong.getArtist());
+            songIntent.putExtra("currentSongImagePath", currentlyPlayingSong.getAlbumCoverPath());
+        }
+
         songIntent.putExtra("albumBitmapPath", album.getPath());
         songIntent.putExtra("albumTitle", album.getName());
         songIntent.putExtra("albumArtist", album.getArtist());

@@ -88,6 +88,8 @@ public class SongActivity extends AppCompatActivity {
     private Bitmap oldBlurredAlbumCover;
     private Bitmap currentBlurredAlbumCover;
 
+    private ArrayList<Song> listOfSongs;
+
     private boolean isPlaying;
     private boolean isAlbumBackVisible = false;
     private boolean nextSong = false;
@@ -96,6 +98,7 @@ public class SongActivity extends AppCompatActivity {
     private float amountTimesFit, toX;
     private int toY, fromY;
     private int yCoords;
+    private int currentSongIndex;
 
     private float fromDegreeButton = 0;
 
@@ -108,6 +111,8 @@ public class SongActivity extends AppCompatActivity {
         initializeViews();
         initializeClasses();
         bindViews(getIntent());
+
+        listOfSongs = getIntent().getParcelableArrayListExtra("listOfSongs");
 
         registerNextButtonClickListener();
         registerPlayButtonClickListener();
@@ -335,8 +340,9 @@ public class SongActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 nextSong = true;
-                ArrayList<Song> listOfSongs = musicStorage.loadAudio();
-                Song nextSong = listOfSongs.get(musicStorage.loadAudioIndex() + 1);
+                //ArrayList<Song> listOfSongs = musicStorage.loadAudio();
+                int nextSongIndex = currentSongIndex + 1;
+                Song nextSong = listOfSongs.get(nextSongIndex);
                 Bitmap nextAlbumCover = converter.getAlbumCoverFromPath(nextSong.getAlbumCoverPath());
                 
                 changeBackgroundOnClick(nextAlbumCover);
@@ -365,8 +371,10 @@ public class SongActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 nextSong = false;
-                ArrayList<Song> listOfSongs = musicStorage.loadAudio();
-                Song previousSong = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
+                //ArrayList<Song> listOfSongs = musicStorage.loadAudio();
+                //Song previousSong = listOfSongs.get(musicStorage.loadAudioIndex() - 1);
+                int previousIndex = currentSongIndex - 1;
+                Song previousSong = listOfSongs.get(previousIndex);
                 Bitmap previousAlbumCover = converter.getAlbumCoverFromPath(previousSong.getAlbumCoverPath());
 
                 changeBackgroundOnClick(previousAlbumCover);
@@ -448,6 +456,10 @@ public class SongActivity extends AppCompatActivity {
     }
 
     public void onEvent(SendSongDetailsEvent sendSongDetailsEvent){
+        currentSongIndex = sendSongDetailsEvent.getSongIndex();
+
+        Log.d("index", String.valueOf(currentSongIndex));
+
         Song newSong = sendSongDetailsEvent.getSong();
         String songName = newSong.getSongName();
         String songArtist = newSong.getArtist();
@@ -490,14 +502,14 @@ public class SongActivity extends AppCompatActivity {
         private Bitmap nextAlbumImageBlurred;
         private Song nextSong;
 
-        private ArrayList<Song> listOfSongs;
+        //private ArrayList<Song> listOfSongs;
         private MusicStorage musicStorage;
         private Animations animations;
 
         private ScrollingArea(){
             musicStorage = new MusicStorage(SongActivity.this);
             animations = new Animations(SongActivity.this);
-            listOfSongs = musicStorage.loadAudio();
+            //listOfSongs = musicStorage.loadAudio();
 
             if(setFirstTime) {
                 ObjectAnimator fadeOutBack = animations.fadeOutObjectAnimator(backAlbumImageView, 0);
@@ -537,9 +549,9 @@ public class SongActivity extends AppCompatActivity {
                             scrollingRight = false;
                             hasScrolled = true;
 
-                            int nextIndex = musicStorage.loadAudioIndex() - 1;
+                            int previousIndex = currentSongIndex - 1;
 
-                            if (nextIndex < 0 || nextIndex >= listOfSongs.size()) {
+                            if (previousIndex < 0 || previousIndex >= listOfSongs.size()) {
                                 lastSongInList = true;
                                 if(!isAlbumBackVisible){
                                     slideImageView(frontAlbumImageView, backAlbumImageView, fromDegreeScrolling, toDegreeScrolling / 6, IMAGE_VIEW_SCROLL_DURATION, false);
@@ -549,7 +561,7 @@ public class SongActivity extends AppCompatActivity {
                             } else {
                                 lastSongInList = false;
                                 if (!setNewAlbumImage) {
-                                    nextSong = listOfSongs.get(nextIndex);
+                                    nextSong = listOfSongs.get(previousIndex);
                                 }
 
                                 if (!isAlbumBackVisible) {
@@ -591,7 +603,7 @@ public class SongActivity extends AppCompatActivity {
                             scrollingRight = true;
                             hasScrolled = true;
 
-                            int nextIndex = musicStorage.loadAudioIndex() + 1;
+                            int nextIndex = currentSongIndex + 1;
 
                             if (nextIndex < 0 || nextIndex >= listOfSongs.size()) {
                                 lastSongInList = true;

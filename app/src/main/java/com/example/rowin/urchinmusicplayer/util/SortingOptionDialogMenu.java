@@ -32,6 +32,8 @@ public class SortingOptionDialogMenu extends Dialog{
     private ImageView sortNameView, sortDurationView, sortArtistView;
     private OnSortListener sortButtonClickListener;
 
+    private ArrayList<Song> listOfSongs;
+
     private int positionY;
     private boolean isSortedName = false;
     private boolean isSortedDuration = false;
@@ -41,13 +43,13 @@ public class SortingOptionDialogMenu extends Dialog{
         void onSort(ArrayList<Song> filteredList, String filterType);
     }
 
-    public SortingOptionDialogMenu(@NonNull Context context, int positionY, OnSortListener sortButtonClickListener) {
+    public SortingOptionDialogMenu(@NonNull Context context, int positionY, ArrayList<Song> listOfSongs, OnSortListener sortButtonClickListener) {
         super(context);
 
         this.context = context;
         this.positionY = positionY;
         this.sortButtonClickListener = sortButtonClickListener;
-
+        this.listOfSongs = listOfSongs;
     }
 
     @Override
@@ -71,7 +73,7 @@ public class SortingOptionDialogMenu extends Dialog{
 
     private void initializeClasses(){
         musicStorage = new MusicStorage(getContext());
-        sortingOptions = new SortingOptions(getContext());
+        sortingOptions = new SortingOptions(getContext(), listOfSongs);
     }
 
     private void setDialogMenuPosition(){
@@ -85,7 +87,7 @@ public class SortingOptionDialogMenu extends Dialog{
 
     private void sortNameClickListener(){
         sortNameView.setOnClickListener(new View.OnClickListener() {
-            ArrayList<Song> listOfSongs = musicStorage.loadAudio();
+            //ArrayList<Song> listOfSongs = musicStorage.loadAudio();
 
             @Override
             public void onClick(View view) {
@@ -104,7 +106,7 @@ public class SortingOptionDialogMenu extends Dialog{
 
     private void sortDurationClickListener(){
         sortDurationView.setOnClickListener(new View.OnClickListener() {
-            ArrayList<Song> listOfSongs = musicStorage.loadAudio();
+            //ArrayList<Song> listOfSongs = musicStorage.loadAudio();
 
             @Override
             public void onClick(View view) {
@@ -123,7 +125,7 @@ public class SortingOptionDialogMenu extends Dialog{
 
     private void sortArtistClickListener(){
         sortArtistView.setOnClickListener(new View.OnClickListener() {
-            ArrayList<Song> listOfSongs = musicStorage.loadAudio();
+            //ArrayList<Song> listOfSongs = musicStorage.loadAudio();
 
             @Override
             public void onClick(View view) {

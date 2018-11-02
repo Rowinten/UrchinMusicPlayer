@@ -24,9 +24,10 @@ public class SortingOptions {
     private ArrayList<Song> listOfSongs;
     private ArrayList<Song> backUpListOfSongs = new ArrayList<>();
 
-    SortingOptions(Context context){
-        MusicStorage musicStorage = new MusicStorage(context);
-        listOfSongs = musicStorage.loadAudio();
+    SortingOptions(Context context, ArrayList<Song> listOfSongs){
+        //MusicStorage musicStorage = new MusicStorage(context);
+        //listOfSongs = musicStorage.loadAudio();
+        this.listOfSongs = listOfSongs;
         backUpListOfSongs.addAll(listOfSongs);
     }
 

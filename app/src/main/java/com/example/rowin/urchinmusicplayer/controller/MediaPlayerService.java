@@ -15,6 +15,7 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 
 import com.example.rowin.urchinmusicplayer.model.MusicStorage;
 import com.example.rowin.urchinmusicplayer.model.Song;
@@ -101,14 +102,15 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         converter = new Converter();
         musicStorage = new MusicStorage(getApplicationContext());
 
-        songIndex = musicStorage.loadAudioIndex();
+        //songIndex = musicStorage.loadAudioIndex();
+        //listOfSongs = musicStorage.loadAudio();
 
-        listOfSongs = musicStorage.loadAudio();
+        listOfSongs = intent.getParcelableArrayListExtra("listOfSongs");
+        songIndex = intent.getIntExtra("songIndex", 1);
         shuffledSongList.addAll(listOfSongs);
 
         Song currentSong = listOfSongs.get(songIndex);
         currentlyPlayingSongID = currentSong.getId();
-
 
         if (songIndex != -1 && songIndex < listOfSongs.size()) {
             mediaFile = currentSong.getSongPath();
@@ -162,7 +164,7 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
                 //and listens to all songs in playlist, it ends at the first clicked song again.
                 if(newSongIndex != selectedSongIndex) {
                     //checks if index is at the end of the list, so that next index starts at beginning again.
-                    if (newSongIndex == listOfSongs.size()) {
+                    if (listOfSongs.size() == newSongIndex) {
                         newSongIndex = 0;
                     }
                     songIndex = newSongIndex;
@@ -347,42 +349,41 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
         //Otherwise wrong audio gets played due to wrong indexes (shuffledSongList is getting smaller and indexes get incorrect in comparison to main list in return )
         songIndex = listOfSongs.indexOf(shufflePickedSong);
         mediaFile = listOfSongs.get(songIndex).getSongPath();
+        musicStorage.saveCurrentSong(shufflePickedSong);
 
-
-        musicStorage.storeAudioIndex(songIndex);
-        musicStorage.storeAudioName(listOfSongs.get(songIndex).getSongName());
+//        musicStorage.storeAudioIndex(songIndex);
+//        musicStorage.storeAudioName(listOfSongs.get(songIndex).getSongName());
 
         initAndPrepareMediaPlayer();
         sendSongToActivity(listOfSongs.get(songIndex));
     }
 
     private void skipTo(String skipType) {
-        int newSongIndex = 0;
-
         if (Objects.equals(skipType, "NEXT")) {
-            newSongIndex = songIndex + 1;
+            songIndex = songIndex + 1;
         } else if (Objects.equals(skipType, "PREVIOUS")) {
             //todo media has been stopped before getCurrentPosition call, getCurrentPosition cannot be called when mediaplayer has been stopped.
             if(mediaPlayer != null && mediaPlayer.getCurrentPosition() > 5000){
                 mediaPlayer.seekTo(0);
                 return;
             } else {
-                newSongIndex = songIndex - 1;
+                songIndex = songIndex - 1;
             }
         }
 
 
-        if(newSongIndex == -1){
-            newSongIndex = listOfSongs.size()-1;
-        } else if(newSongIndex == listOfSongs.size()){
-            newSongIndex = 0;
+        if(songIndex == -1){
+            songIndex = listOfSongs.size()-1;
+        } else if(songIndex == listOfSongs.size()){
+            songIndex = 0;
         }
 
-        if (newSongIndex != -1 && newSongIndex < listOfSongs.size()) {
-            songIndex = newSongIndex;
+        if (songIndex != -1 && songIndex < listOfSongs.size()) {
+            Song nextSong = listOfSongs.get(songIndex);
             mediaFile = listOfSongs.get(songIndex).getSongPath();
-            musicStorage.storeAudioIndex(newSongIndex);
-            musicStorage.storeAudioName(listOfSongs.get(songIndex).getSongName());
+            musicStorage.saveCurrentSong(nextSong);
+//            musicStorage.storeAudioIndex(newSongIndex);
+//            musicStorage.storeAudioName(listOfSongs.get(songIndex).getSongName());
 
             initAndPrepareMediaPlayer();
             sendSongToActivity(listOfSongs.get(songIndex));
@@ -426,15 +427,15 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
     }
 
     private void startProgressUpdateEvent(){
-        updateTimer = new Timer();
-        updateTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if(mediaPlayer.isPlaying()) {
-                    EventBus.getDefault().post(new ProgressUpdateEvent(mediaPlayer.getCurrentPosition()));
-                }
-            }
-        }, 0, 1000);
+//        updateTimer = new Timer();
+//        updateTimer.scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                if(mediaPlayer.isPlaying()) {
+//                    EventBus.getDefault().post(new ProgressUpdateEvent(mediaPlayer.getCurrentPosition()));
+//                }
+//            }
+//        }, 0, 1000);
     }
 
     private void stopProgressUpdateEvent(){
@@ -458,7 +459,11 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
     //gets new index of song from a filtered (and changed) list, so that when next song is played it does not use the index of the previous list.
     private int getNewIndex(ArrayList<Song> listOfSongs) {
+        Log.d("newIndex", String.valueOf(currentlyPlayingSongID));
+
         for(int i = 0; i < listOfSongs.size(); i++){
+            Log.d("Indndnd", String.valueOf(listOfSongs.get(i).getId()));
+            Log.d("Indndnd", String.valueOf(listOfSongs.get(i).getSongName()));
             if(listOfSongs.get(i).getId() == currentlyPlayingSongID){
                 return i;
             }
@@ -487,9 +492,11 @@ public class MediaPlayerService extends Service implements MediaPlayer.OnComplet
 
         Song song = listOfSongs.get(songIndex);
         mediaFile = song.getSongPath();
-        musicStorage.storeAudioIndex(songIndex);
+        musicStorage.saveCurrentSong(song);
+        currentlyPlayingSongID = song.getId();
 
-        musicStorage.storeAudioName(song.getSongName());
+//        musicStorage.storeAudioIndex(songIndex);
+//        musicStorage.storeAudioName(song.getSongName());
 
         initAndPrepareMediaPlayer();
         sendSongToActivity(song);

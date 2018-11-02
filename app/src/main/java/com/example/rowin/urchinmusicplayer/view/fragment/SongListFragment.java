@@ -17,6 +17,7 @@ import android.view.animation.DecelerateInterpolator;
 
 import com.example.rowin.urchinmusicplayer.R;
 import com.example.rowin.urchinmusicplayer.controller.MainActivity;
+import com.example.rowin.urchinmusicplayer.model.event.PlaySongEvent;
 import com.example.rowin.urchinmusicplayer.view.adapter.SongRecyclerViewAdapter;
 import com.example.rowin.urchinmusicplayer.model.event.SendSongDetailsEvent;
 import com.example.rowin.urchinmusicplayer.model.event.ShuffleEvent;
@@ -28,6 +29,7 @@ import com.example.rowin.urchinmusicplayer.util.SortingOptionDialogMenu;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 import de.greenrobot.event.EventBus;
 
@@ -58,7 +60,7 @@ public class SongListFragment extends Fragment{
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
         View view =  inflater.inflate(R.layout.songs_tab_fragment, container, false);
-        getActivity().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        Objects.requireNonNull(getActivity()).getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
         initializeViews(view);
         initializeClasses();
@@ -85,7 +87,7 @@ public class SongListFragment extends Fragment{
 
     private int getColorFromBundle(){
         Bundle bundle = getArguments();
-        return bundle.getInt("colorAccent");
+        return Objects.requireNonNull(bundle).getInt("colorAccent");
     }
 
     private void initializeViews(View view){
@@ -100,7 +102,7 @@ public class SongListFragment extends Fragment{
     }
 
     private void initializeRecyclerView(){
-        ArrayList<Song> listOfSongs = getArguments().getParcelableArrayList("listOfSongs");
+        ArrayList<Song> listOfSongs = Objects.requireNonNull(getArguments()).getParcelableArrayList("listOfSongs");
         SongRecyclerViewAdapter recyclerViewAdapter = getRecyclerViewAdapter(listOfSongs);
 
         songListRecyclerView.setAdapter(recyclerViewAdapter);
@@ -122,7 +124,7 @@ public class SongListFragment extends Fragment{
 
         //Checks if a song has been played in the last session of the user, and styles the recyclerView based on that song (color from album picture and scroll
         //to the position of that song)
-        Integer lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex();
+        Integer lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex(listOfSongs);
         if(lastPlayedSongIndex != null) {
             recyclerViewAdapter.setTextColor(getColorFromBundle());
             recyclerViewAdapter.setSelected(lastPlayedSongIndex);
@@ -149,18 +151,19 @@ public class SongListFragment extends Fragment{
     }
 
     private SongRecyclerViewAdapter getRecyclerViewAdapter(final ArrayList<Song> listOfSongs){
-        recyclerViewAdapter =  new SongRecyclerViewAdapter(getContext(), songListRecyclerView, listOfSongs, new SongRecyclerViewAdapter.OnItemClickListener() {
+        recyclerViewAdapter =  new SongRecyclerViewAdapter(Objects.requireNonNull(getContext()), songListRecyclerView, listOfSongs, new SongRecyclerViewAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(int position, Song song) {
-                ((MainActivity) getActivity()).playAudio(position);
-                windowUtils.hideSoftKeyboard(getActivity().getCurrentFocus());
+                EventBus.getDefault().post(new PlaySongEvent(position));
+                windowUtils.hideSoftKeyboard(Objects.requireNonNull(getActivity()).getCurrentFocus());
             }
         }, new SongRecyclerViewAdapter.OnHeaderClickListener() {
             @Override
             public void onHeaderClick(int viewHeight) {
                 MainActivity mainActivity = ((MainActivity) getActivity());
-                int positionY = windowUtils.getNavigationBarHeight()  + mainActivity.currentlyPlayingTab.getHeight() + viewHeight;
-                final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY, new SortingOptionDialogMenu.OnSortListener() {
+                int currentPlayingTabHeight = Objects.requireNonNull(mainActivity).currentlyPlayingTab.getHeight();
+                int positionY = windowUtils.getNavigationBarHeight()  + currentPlayingTabHeight + viewHeight;
+                final Dialog filterOptionDialog = new SortingOptionDialogMenu(getContext(), positionY, listOfSongs, new SortingOptionDialogMenu.OnSortListener() {
                     @Override
                     public void onSort(ArrayList<Song> filteredList, String filterType) {
                         recyclerViewAdapter.changeDataSet(filteredList);

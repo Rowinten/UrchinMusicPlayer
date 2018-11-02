@@ -19,6 +19,7 @@ import com.example.rowin.urchinmusicplayer.util.ColorReader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Objects;
 
 /**
  * Created by Rowin on 2/24/2018.
@@ -32,10 +33,11 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
     private int colorAccent;
     private ArrayList<Song> listOfSongs;
     private ArrayList<Album> listOfAlbums;
+    private Song currentSong;
 
     private ColorReader colorReader;
 
-    public SectionsPagerAdapter(FragmentManager fm, Context context, ArrayList<Song> listOfSongs, ArrayList<Album> listOfAlbums, int colorAccent) {
+    public SectionsPagerAdapter(FragmentManager fm, Context context, ArrayList<Song> listOfSongs, ArrayList<Album> listOfAlbums, Song currentSong, int colorAccent) {
         super(fm);
         this.context = context;
         iconColor = context.getResources().getColor(R.color.colorAccent);
@@ -44,21 +46,22 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         this.colorAccent = colorAccent;
         this.listOfSongs = listOfSongs;
         this.listOfAlbums = listOfAlbums;
+        this.currentSong = currentSong;
     }
 
     //Creates the layout for all the tabs
     public void createTabIcons(TabLayout tabLayout){
         ImageView songTab = (ImageView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
         songTab.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_focused));
-        tabLayout.getTabAt(0).setCustomView(songTab);
+        Objects.requireNonNull(tabLayout.getTabAt(0)).setCustomView(songTab);
 
         ImageView albumTab = (ImageView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
         albumTab.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_album_tab_icon_unfocused));
-        tabLayout.getTabAt(1).setCustomView(albumTab);
+        Objects.requireNonNull(tabLayout.getTabAt(1)).setCustomView(albumTab);
 
         ImageView playListTab = (ImageView) LayoutInflater.from(context).inflate(R.layout.custom_tab_layout, null);
         playListTab.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_playlist_tab_icon_unfocused));
-        tabLayout.getTabAt(2).setCustomView(playListTab);
+        Objects.requireNonNull(tabLayout.getTabAt(2)).setCustomView(playListTab);
     }
 
     //Changes the layout from a tab to unselected layout
@@ -66,15 +69,15 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
         switch(index){
             case 0:
                 ImageView songTabView = (ImageView) tab.getCustomView();
-                songTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_unfocused));
+                Objects.requireNonNull(songTabView).setImageDrawable(context.getResources().getDrawable(R.drawable.ic_song_tab_icon_unfocused));
                 break;
             case 1:
                 ImageView albumTabView = (ImageView) tab.getCustomView();
-                albumTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_album_tab_icon_unfocused));
+                Objects.requireNonNull(albumTabView).setImageDrawable(context.getResources().getDrawable(R.drawable.ic_album_tab_icon_unfocused));
                 break;
             case 2:
                 ImageView playlistTabView = (ImageView) tab.getCustomView();
-                playlistTabView.setImageDrawable(context.getResources().getDrawable(R.drawable.ic_playlist_tab_icon_unfocused));
+                Objects.requireNonNull(playlistTabView).setImageDrawable(context.getResources().getDrawable(R.drawable.ic_playlist_tab_icon_unfocused));
                 break;
         }
     }
@@ -115,6 +118,7 @@ public class SectionsPagerAdapter extends FragmentPagerAdapter {
                 AlbumFragment albumFragment = new AlbumFragment();
                 Bundle albumBundle = new Bundle();
                 albumBundle.putInt("colorAccent", colorAccent);
+                //albumBundle.putParcelable("currentSong", currentSong);
                 albumBundle.putParcelableArrayList("listOfAlbums", listOfAlbums);
                 albumBundle.putParcelableArrayList("listOfSongs", listOfSongs);
                 albumFragment.setArguments(albumBundle);

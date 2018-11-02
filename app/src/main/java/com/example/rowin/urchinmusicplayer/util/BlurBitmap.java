@@ -18,25 +18,35 @@ public class BlurBitmap {
     /**
      *
      * @param context context of class
-     * @param image image that needs to be blurred
+     * @param bitmap image that needs to be blurred
      * @return blurred version of image
      */
-    public static Bitmap blur(Context context, Bitmap image) {
-        int width = Math.round(image.getWidth() * BITMAP_SCALE);
-        int height = Math.round(image.getHeight() * BITMAP_SCALE);
 
-        Bitmap inputBitmap = Bitmap.createScaledBitmap(image, width, height, false);
-        Bitmap outputBitmap = Bitmap.createBitmap(inputBitmap);
+    public static Bitmap blur(Context context, Bitmap bitmap){
+        try{
+            RenderScript renderScript = RenderScript.create(context);
+            Allocation allocation = Allocation.createFromBitmap(renderScript, bitmap);
 
-        RenderScript rs = RenderScript.create(context);
-        ScriptIntrinsicBlur theIntrinsic = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
-        Allocation tmpIn = Allocation.createFromBitmap(rs, inputBitmap);
-        Allocation tmpOut = Allocation.createFromBitmap(rs, outputBitmap);
-        theIntrinsic.setRadius(BLUR_RADIUS);
-        theIntrinsic.setInput(tmpIn);
-        theIntrinsic.forEach(tmpOut);
-        tmpOut.copyTo(outputBitmap);
+            ScriptIntrinsicBlur blur = ScriptIntrinsicBlur.create(renderScript, Element.U8_4(renderScript));
+            blur.setRadius(BLUR_RADIUS);
+            blur.setInput(allocation);
 
-        return outputBitmap;
+            Bitmap result = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            Allocation outAllocation = Allocation.createFromBitmap(renderScript, result);
+
+            blur.forEach(outAllocation);
+            outAllocation.copyTo(result);
+
+            renderScript.destroy();
+
+            int width = Math.round(result.getWidth() * BITMAP_SCALE);
+            int height = Math.round(result.getHeight() * BITMAP_SCALE);
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(result, width, height, false);
+
+            return scaledBitmap;
+        }
+        catch (Exception e){
+            return bitmap;
+        }
     }
 }

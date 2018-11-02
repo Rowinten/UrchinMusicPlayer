@@ -90,13 +90,13 @@ public class Song implements Parcelable{
         this.id = id;
     }
 
-    public void setAlbumId(Long albumId){ this.albumId = albumId;}
+    void setAlbumId(Long albumId){ this.albumId = albumId;}
 
-    public void setSongPath(String songPath) {
+    void setSongPath(String songPath) {
         this.songPath = songPath;
     }
 
-    public void setSongName(String songName) {
+    void setSongName(String songName) {
         this.songName = songName;
     }
 
@@ -104,11 +104,11 @@ public class Song implements Parcelable{
         this.duration = duration;
     }
 
-    public void setArtist(String artist) {
+    void setArtist(String artist) {
         this.artist = artist;
     }
 
-    public void setAlbumCoverPath(String albumCoverPath) {
+    void setAlbumCoverPath(String albumCoverPath) {
         this.albumCoverPath = albumCoverPath;
     }
 }

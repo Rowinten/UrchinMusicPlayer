@@ -46,6 +46,7 @@ import com.example.rowin.urchinmusicplayer.util.ColorReader;
 import com.example.rowin.urchinmusicplayer.util.Converter;
 import com.example.rowin.urchinmusicplayer.model.SongManager;
 import com.example.rowin.urchinmusicplayer.util.WindowUtils;
+import com.squareup.picasso.Picasso;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -62,7 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private Boolean isAlbumBackVisible = false;
     private Boolean statePlaying = false;
 
-    private Song currentlyPlayingSong;
+    public Song currentlyPlayingSong;
+    public ArrayList<Song> listOfSongs;
     //public Song lastPlayedSong = null;
     //public Integer lastPlayedSongIndex = null;
 
@@ -85,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager container;
     private TabLayout tabs;
     public ConstraintLayout currentlyPlayingTab;
+    private ConstraintLayout songInfoViewHolder;
     private AppBarLayout appBar;
 
     private ImageView backgroundImage;
@@ -99,6 +102,9 @@ public class MainActivity extends AppCompatActivity {
         createServiceConnection();
         initializeViews();
         initializeClasses();
+
+        //musicStorage.clearCachedAudioPlaylist();
+        //musicStorage.clearStoredBackgroundImage();
 
         Bitmap backgroundBitmap = musicStorage.loadBitmapFromStorage(getApplicationContext());
         if(backgroundBitmap != null) {
@@ -154,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission granted and now can proceed
 
-                    new RetrieveSongAsyncTask(this).execute();
+                    new RetrieveSongAsyncTask(this, manager).execute();
 
                 } else {
                     //TODO Add function to close application if permission is denied
@@ -196,8 +202,10 @@ public class MainActivity extends AppCompatActivity {
         songArtistView = findViewById(R.id.song_band_name_view_currently_playing_tab);
         frontAlbumCoverLayout = findViewById(R.id.front_album_cover_layout);
         backAlbumCoverLayout = findViewById(R.id.back_album_cover_layout);
-        backAlbumCoverView = findViewById(R.id.back_album_cover_view);
-        frontAlbumCoverView = findViewById(R.id.front_album_cover_view);
+
+        songInfoViewHolder = findViewById(R.id.song_info_view_holder);
+        backAlbumCoverView = findViewById(R.id.front_album_cover_view);
+        frontAlbumCoverView = findViewById(R.id.back_album_cover_view);
         mainViewViewHolder = findViewById(R.id.view_holder_main_activity);
     }
 
@@ -216,11 +224,14 @@ public class MainActivity extends AppCompatActivity {
         frontAlbumCoverView.setImageBitmap(albumCover);
     }
 
-    public void playAudio(int index){
+    public void playAudio(ArrayList<Song> listOfSongs, int index){
         if(!serviceBound){
             Intent playerIntent = new Intent(this, MediaPlayerService.class);
-            MusicStorage musicStorage = new MusicStorage(this);
-            musicStorage.storeAudioIndex(index);
+            playerIntent.putParcelableArrayListExtra("listOfSongs", listOfSongs);
+            playerIntent.putExtra("songIndex", index);
+
+//            MusicStorage musicStorage = new MusicStorage(this);
+//            musicStorage.storeAudioIndex(index);
 
             startService(playerIntent);
             bindService(playerIntent, serviceConnection, Context.BIND_AUTO_CREATE);
@@ -230,24 +241,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openSongActivity(){
-        currentlyPlayingTab.setOnClickListener(new View.OnClickListener() {
+        songInfoViewHolder.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Intent songIntent = new Intent(MainActivity.this, SongActivity.class);
-                int[] screenLocation = new int[2];
-                backAlbumCoverView.getLocationOnScreen(screenLocation);
 
-                if(currentlyPlayingSong == null){
-                    currentlyPlayingSong = musicStorage.getCurrentlyPlayingSong();
+                if(currentlyPlayingSong != null) {
+                    int[] screenLocation = new int[2];
+                    backAlbumCoverView.getLocationOnScreen(screenLocation);
+
+                    songIntent.putExtra("yCoordinates", screenLocation[1]);
+                    songIntent.putParcelableArrayListExtra("listOfSongs", manager.getSongList());
+                    songIntent.putExtra("albumImagePath", currentlyPlayingSong.getAlbumCoverPath());
+                    songIntent.putExtra("songName", currentlyPlayingSong.getSongName());
+                    songIntent.putExtra("songArtist", currentlyPlayingSong.getArtist());
+                    songIntent.putExtra("songDuration", currentlyPlayingSong.getDuration());
+                    songIntent.putExtra("currentPositionSong", currentPositionSong);
+                    startActivity(songIntent);
                 }
-
-                songIntent.putExtra("yCoordinates", screenLocation[1]);
-                songIntent.putExtra("albumImagePath", currentlyPlayingSong.getAlbumCoverPath());
-                songIntent.putExtra("songName", currentlyPlayingSong.getSongName());
-                songIntent.putExtra("songArtist", currentlyPlayingSong.getArtist());
-                songIntent.putExtra("songDuration", currentlyPlayingSong.getDuration());
-                songIntent.putExtra("currentPositionSong", currentPositionSong);
-                startActivity(songIntent);
             }
         });
     }
@@ -315,7 +326,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setAdapterForViewPager(ArrayList<Song> listOfSongs, ArrayList<Album> listOfAlbums, int colorAccent){
-        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this, listOfSongs, listOfAlbums, colorAccent);
+        if(currentlyPlayingSong == null){
+            currentlyPlayingSong = musicStorage.getLastPlayedSong();
+        }
+
+        mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager(), this, listOfSongs, listOfAlbums, currentlyPlayingSong, colorAccent);
         ViewPager mViewPager = findViewById(R.id.container);
 
         mViewPager.setAdapter(mSectionsPagerAdapter);
@@ -418,6 +433,7 @@ public class MainActivity extends AppCompatActivity {
         Song currentlyPlayingSong = sendSongDetailsEvent.getSong();
         String albumCoverPath = currentlyPlayingSong.getAlbumCoverPath();
         Bitmap albumCoverPicture = converter.getAlbumCoverFromPath(albumCoverPath);
+        Bitmap blurredPicture = BlurBitmap.blur(this, albumCoverPicture);
 
         int albumCoverColor = sendSongDetailsEvent.getSongAlbumColor();
         int duration = sendSongDetailsEvent.getDuration().intValue();
@@ -431,7 +447,8 @@ public class MainActivity extends AppCompatActivity {
         }
 
         setAllViewsTransparent();
-        changeBackground(albumCoverPicture);
+        changeBackground(blurredPicture);
+        musicStorage.saveBitmapToStorage(blurredPicture, getApplicationContext());
         changeSelectedTabIconColor(albumCoverColor);
     }
 
@@ -440,9 +457,9 @@ public class MainActivity extends AppCompatActivity {
         private WeakReference<MainActivity> activityReference;
         private SongManager songManager;
 
-        private RetrieveSongAsyncTask(MainActivity context){
+        private RetrieveSongAsyncTask(MainActivity context, SongManager songManager){
             activityReference = new WeakReference<>(context);
-            songManager = new SongManager(context);
+            this.songManager = songManager;
         }
 
         @Override
@@ -464,7 +481,7 @@ public class MainActivity extends AppCompatActivity {
             ArrayList<Album> listOfAlbums = songManager.getAlbumList();
 
             //musicStorage.storeAudio(listOfSongs);
-            Integer lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex();
+            Integer lastPlayedSongIndex = musicStorage.getLastPlayedSongIndex(listOfSongs);
 
             if(lastPlayedSongIndex != null){
                 Song lastPlayedSong = listOfSongs.get(lastPlayedSongIndex);
@@ -474,10 +491,8 @@ public class MainActivity extends AppCompatActivity {
                 mainActivity.backgroundImage.setImageBitmap(mainActivity.OldBlurredAlbumCover);
 
                 mainActivity.initializeSongTab(lastPlayedSong);
-                mainActivity.playAudio(lastPlayedSongIndex);
-
+                mainActivity.playAudio(listOfSongs, lastPlayedSongIndex);
                 mainActivity.setAllViewsTransparent();
-
 
                 int dominantColor = colorReader.getDominantColor(mainActivity.OldBlurredAlbumCover);
                 int complimentedDominantColor = colorReader.getComplimentedColor(dominantColor);
@@ -490,6 +505,10 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 int color = mainActivity.getResources().getColor(R.color.colorAccent);
                 mainActivity.setAdapterForViewPager(listOfSongs, listOfAlbums, color);
+                mainActivity.mSectionsPagerAdapter.setIconColor(color);
+                mainActivity.playAudio(listOfSongs, 1);
+
+
             }
 
 

@@ -12,6 +12,7 @@ import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -73,9 +74,26 @@ public class MusicStorage {
         return sharedPreferences.getInt("audioIndex", -1);//return -1 if no data found
     }
 
-    public Song getCurrentlyPlayingSong(){
-        return loadAudio().get(loadAudioIndex());
+    public void saveCurrentSong(Song song){
+        sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        Gson gson = new Gson();
+        String json = gson.toJson(song);
+        editor.putString("lastPlayedSong", json);
+        editor.apply();
     }
+
+    public Song getLastPlayedSong(){
+        sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
+        Gson gson = new Gson();
+        String json = sharedPreferences.getString("lastPlayedSong", "");
+        return gson.fromJson(json, Song.class);
+    }
+
+//    public Song getCurrentlyPlayingSong(){
+//        return loadAudio().get(loadAudioIndex());
+//    }
 
     //Saves the background image to the applications' storage, so that the currently in use background will be saved and van be accessed
     //When the user re-opens the app, bitmap will be overridden when a new background is set.
@@ -119,28 +137,39 @@ public class MusicStorage {
     //Searches song by name not index. Because when filter is applied index from filtered list is taken, at startup the non
     //filtered list is taken and does not return the valid song because index is not correct. so store audio name at start of new song
     //and search for the song object with the same name value, return the index of that object.
-    public Integer getLastPlayedSongIndex(){
-        ArrayList<Song> listOfSongs = loadAudio();
-        String songName = loadAudioName();
-        Integer index = 0;
+    public Integer getLastPlayedSongIndex(ArrayList<Song> listOfSongs){
+        if(getLastPlayedSong() != null) {
+            int songId = getLastPlayedSong().getId();
+            Integer index = 0;
 
-        for(Song song: listOfSongs){
-            if(Objects.equals(song.getSongName(), songName)){
-                index = listOfSongs.lastIndexOf(song);
+            for (Song song : listOfSongs) {
+                if (Objects.equals(song.getId(), songId)) {
+                    index = listOfSongs.lastIndexOf(song);
+                }
+            }
+
+            if (index != -1) {
+                return index;
             }
         }
 
-        if(index != -1){
-            return index;
-        }
-
         return null;
+    }
+
+    public void clearStoredBackgroundImage(){
+        ContextWrapper cw = new ContextWrapper(context);
+        File directory = cw.getDir("last_background_used", Context.MODE_PRIVATE);
+        File myPath = new File(directory, "last_background_used.png");
+
+        if (myPath.exists()){
+            myPath.delete();
+        }
     }
 
     public void clearCachedAudioPlaylist() {
         sharedPreferences = context.getSharedPreferences(STORAGE, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
-        editor.commit();
+        editor.apply();
     }
 }
